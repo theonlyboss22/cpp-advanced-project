@@ -22,7 +22,7 @@ public:
 	int play()
 	{
 		// Blackjack game logic here
-		return 0; //testing
+		return 0; //testing 2
 	}
 };
 
