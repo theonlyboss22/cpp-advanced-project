@@ -32,7 +32,7 @@ public:
 	int play()
 	{
 		// Slots game logic here
-		return 0;
+		return 0; // testing 3
 	}
 };
 
