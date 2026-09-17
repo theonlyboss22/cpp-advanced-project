@@ -44,6 +44,13 @@ public:
 			cout << "Insufficient balance. \nTry again: \n";
 		}
 
+		if (betAmount <= balance)
+		{
+			cout << "Balance Remaining: " << balance -= betAmount << endl;
+
+			balance -= betAmount;
+		}
+
 		return 0;
 	}
 };
