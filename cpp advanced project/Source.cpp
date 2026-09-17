@@ -46,9 +46,9 @@ public:
 
 		if (betAmount <= balance)
 		{
-			cout << "Balance Remaining: " << balance -= betAmount << endl;
+			cout << "Balance Remaining: " << balance - betAmount << endl;
 
-			balance -= betAmount;
+			balance = balance - betAmount;
 		}
 
 		return 0;
