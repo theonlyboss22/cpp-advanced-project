@@ -131,7 +131,7 @@ public:
 class HorseRace : public Game
 {
 private:
-	void playRace(balance, int horseCount, double finishValue) {
+	void playRace(int balance, int horseCount, double finishValue) { // You forgot to add "int" to balance parameter, so I added it. -Zane
 		while (true) {
 
 		}
