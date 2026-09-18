@@ -130,14 +130,64 @@ public:
 
 class HorseRace : public Game
 {
+private:
+	void playRace(balance, int horseCount, double finishValue) {
+		while (true) {
+
+		}
+	}
 public:
 	int play() override
 	{
 		// Horse Race game logic here
+		while (true) {
+			if (balance <= 0) {
+				cout << "You do not have enough balance to play." << endl;
+				return 0;
+			}
 
-		return 0;
+			cout << "Horse Race" << endl;
+			cout << "\nBalance: " << balance << endl;
+
+			cout << "\n Choose an area: " << endl;
+
+			cout << "1.Small Area			(3  horses)" << endl;
+			cout << "2.Medium Area			(5  horses)" << endl;
+			cout << "3.Large Area			(7  horses)" << endl;
+			cout << "4.Extra Large Area		(10 horses)" << endl;
+			cout << "5.Back" << endl;
+
+			int choice;
+			cout << "\nChoice: " << endl;
+			cin >> choice;
+
+			switch (choice) {
+			case 1:
+				playRace(balance, 3, 100);
+				break;
+
+			case 2:
+				playRace(balance, 5, 200);
+				break;
+
+			case 3:
+				playRace(balance, 7, 350);
+				break;
+
+			case 4:
+				playRace(balance, 10, 500);
+				break;
+
+			case 5:
+				return 0;
+
+			default:
+				cout << "Invalid selection." << endl;
+				break;
+			}
+
+		}
 	}
-
 };
 
 int main()
