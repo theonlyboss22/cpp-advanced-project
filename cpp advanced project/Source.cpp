@@ -128,11 +128,93 @@ public:
 	}
 };
 
+
+// Horse Class
+class Horse {
+private:
+	string name;
+	double distance;
+	bool finished;
+	int place;
+
+public:
+	Horse(string horseName) {
+		name = horseName;
+		distance = 1.0;
+		finished = false;
+		place = 0;
+	}
+
+	void run() {
+		int randomNumber = rand() % 100;
+
+		if (randomNumber < 50) {
+			distance += 0;
+		}
+		else if (randomNumber < 80) {
+			distance += 1.09;
+		}
+		else if (randomNumber < 95) {
+			distance += 2.29;
+		}
+		else {
+			distance += 4.59;
+		}
+	}
+
+	string getName() {
+		return name;
+	}
+
+	double getDistance() {
+		return distance;
+	}
+
+	bool isFinished() {
+		return finished;
+	}
+
+	int getPlace() {
+		return place;
+	}
+
+	void setFinished(bool value) {
+		finished = value;
+	}
+
+	void setPlace(int value) {
+		place = value;
+	}
+};
+
 class HorseRace : public Game
 {
 private:
 	void playRace(balance, int horseCount, double finishValue) {
 		while (true) {
+
+			// Horse Number
+			Horse horse[10] = {
+				Horse("Horse 1"),
+				Horse("Horse 2"),
+				Horse("Horse 3"),
+				Horse("Horse 4"),
+				Horse("Horse 5"),
+				Horse("Horse 6"),
+				Horse("Horse 7"),
+				Horse("Horse 8"),
+				Horse("Horse 9"),
+				Horse("Horse 10")
+			};
+
+			// Select Horse and Bet
+			int selectHorse;
+			double bet;
+			string startChoice;
+
+			while (true) {
+
+			}
 
 		}
 	}
