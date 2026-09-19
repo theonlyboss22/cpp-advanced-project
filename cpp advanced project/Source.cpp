@@ -190,7 +190,7 @@ public:
 class HorseRace : public Game
 {
 private:
-	void playRace(int balance, int horseCount, double finishValue) { // You forgot to add "int" to balance parameter, so I added it. -Zane
+	void playRace(int balance, int horseCount, double finishValue) { 
 		while (true) {
 
 			// Horse Number
