@@ -20,20 +20,15 @@ private:
 	bool inputValid = false;
 public:
 	int bet = 0;
-	virtual int play() = 0;
-	int Exit()
-	{
-		cout << "Exiting..." << endl;
-		return 0;
-	}
+	virtual void play() = 0;
 	int getBet()
 	{
 		do
 		{
-			cout << "Enter your bet amount or enter 0 to pick another game: \n";
+			cout << "Enter your bet amount: \n";
 			cin.ignore(INT_MAX, '\n');
 			cin >> betAmount;
-			if ((betAmount > balance || betAmount < 0 || cin.fail()))
+			if ((betAmount > balance || betAmount <= 0 || cin.fail()))
 			{
 				cout << "Insufficient balance / invalid input. \nTry again: \n";
 				inputValid = false;
@@ -43,12 +38,6 @@ public:
 				cout << "\nBalance Remaining: " << balance - betAmount << "\n" << endl;
 
 				inputValid = true;
-			}
-			else if (betAmount == 0)
-			{
-				cout << "Returning to game selection...\n" << endl;
-				inputValid = true;
-				Exit();
 			}
 			else
 				cout << "Unexpected error. \nTry again: \n";
@@ -110,7 +99,7 @@ private:
 
 
 public:
-	int play() override
+	void play() override
 	{
 		default_random_engine generator(random_device{}());
 
@@ -175,34 +164,28 @@ public:
 		case 4: //forfeit
 			balance -= bet;
 			cout << "You lost your bet of " << bet << ".\n";
-			playing = false;
 			break;
 		}
-
-
-		return 0;
 	}
 };
 
 class Slots : public Game
 {
 public:
-	int play() override
+	void play() override
 	{
 		cout << "Slots selected. \n";
 		bet = getBet();
-		return 0;
 	}
 };
 
 class Roulette : public Game
 {
 public:
-	int play() override
+	void play() override
 	{
 		cout << "Roulette selected. \n";
 		bet = getBet();
-		return 0;
 	}
 };
 
@@ -297,13 +280,13 @@ private:
 		}
 	}
 public:
-	int play() override
+	void play() override
 	{
 		// Horse Race game logic here
 		while (true) {
 			if (balance <= 0) {
 				cout << "You do not have enough balance to play." << endl;
-				return 0;
+				break;
 			}
 
 			cout << "Horse Race selected. \n";
@@ -340,8 +323,7 @@ public:
 				break;
 
 			case 5:
-				return 0;
-
+				break;
 			default:
 				cout << "Invalid selection." << endl;
 				break;
@@ -389,12 +371,13 @@ int main()
 			break;
 		case 5:
 			cout << "Exiting..." << endl;
+			playing = false;
 			break;
 		default:
 			cout << "Invalid selection." << endl;
 			break;
 		}
-		delete game;
-		return 0;
 	}
+	delete game;
+	return 0;
 }
