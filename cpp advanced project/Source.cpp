@@ -1,10 +1,12 @@
+using namespace std;
 #include <iostream>
 #include <string>
 #include <fstream>
 #include <random>
-using namespace std;
+#include <chrono>
 
 int balance = 0;
+bool playing = true;
 
 void addBalance(int newBalance)
 {
@@ -14,7 +16,7 @@ void addBalance(int newBalance)
 class Game
 {
 private:
-	int betAmount;
+	int betAmount = 0;
 	bool inputValid = false;
 public:
 	int bet = 0;
@@ -28,10 +30,10 @@ public:
 	{
 		do
 		{
-			cout << "Enter your bet amount : \n";
+			cout << "Enter your bet amount or enter 0 to pick another game: \n";
 			cin.ignore(INT_MAX, '\n');
 			cin >> betAmount;
-			if ((betAmount > balance || betAmount <= 0 || betAmount == NULL || cin.fail()))
+			if ((betAmount > balance || betAmount < 0 || cin.fail()))
 			{
 				cout << "Insufficient balance / invalid input. \nTry again: \n";
 				inputValid = false;
@@ -40,8 +42,13 @@ public:
 			{
 				cout << "\nBalance Remaining: " << balance - betAmount << "\n" << endl;
 
-				balance = balance - betAmount;
 				inputValid = true;
+			}
+			else if (betAmount == 0)
+			{
+				cout << "Returning to game selection...\n" << endl;
+				inputValid = true;
+				Exit();
 			}
 			else
 				cout << "Unexpected error. \nTry again: \n";
@@ -100,6 +107,8 @@ private:
 
 		return total;
 	}
+
+
 public:
 	int play() override
 	{
@@ -107,19 +116,69 @@ public:
 
 		int hand[11];
 		int count = 0;
-		int currentHandValue;
-
-
+		int currentHandValue = 0;
+		int selectedAction = 0;
+		bool playing = true;
 		card cards[] = { {"2", 2, 4}, {"3", 3, 4}, {"4", 4, 4}, {"5", 5, 4}, {"6", 6, 4}, {"7", 7, 4}, {"8", 8, 4}, {"9", 9, 4}, {"10", 10, 4}, {"Jack", 10, 4}, {"Queen", 10, 4}, {"King", 10, 4}, {"Ace", 11, 4} };
 		uniform_int_distribution<int> distribution(0, (sizeof(cards) / sizeof(cards[0])) - 1); // changed index so it works
 		int randomNumber = distribution(generator);
+
 		cout << "Blackjack selected. \n";
+
 		bet = getBet();
 
 		drawHand(hand, count, cards, generator, distribution);
 
-		currentHandValue = calculateHandValue(hand, count, cards);
+		currentHandValue += calculateHandValue(hand, count, cards);
 		cout << "Current Hand Value: " << currentHandValue << endl;
+		cout << "Choose action: \n1. Hit\n2. Stand\n3. Double Down\n4. Forfeit(loses bet and exits blackjack)";
+		cin >> selectedAction;
+		switch (selectedAction)
+		{
+		case 1: //hit
+			bool stand;
+			stand = false;
+			while ((!stand) && (currentHandValue < 20))
+			{
+				drawHand(hand, count, cards, generator, distribution);
+				currentHandValue += calculateHandValue(hand, count, cards);
+				cout << "Current Hand Value: " << currentHandValue << endl;
+				cout << "Choose action: \n1. Hit\n2. Stand\n3. Forfeit(loses bet and exits blackjack)";
+				cin >> selectedAction;
+				if (selectedAction == 1) //hit
+				{
+					stand = false;
+				}
+				else if (selectedAction == 2) //stand
+				{
+					stand = true;
+				}
+				else if (selectedAction == 3) //forfeit
+				{
+					balance -= bet;
+					cout << "You lost your bet of " << bet << ".\n";
+					playing = false;
+				}
+			}
+			if (currentHandValue == 21)
+			{
+				cout << "Blackjack! You win!\nNew Balance: " << balance+(bet*3);
+			}
+			break;
+		case 2: //stand
+			
+			break;
+		case 3: //double down
+			bet *= 2;
+			cout << "Double down selected. \nBet increased to: " << bet;
+			break;
+		case 4: //forfeit
+			balance -= bet;
+			cout << "You lost your bet of " << bet << ".\n";
+			playing = false;
+			break;
+		}
+
 
 		return 0;
 	}
@@ -262,7 +321,8 @@ public:
 			cout << "\nChoice: " << endl;
 			cin >> choice;
 
-			switch (choice) {
+			switch (choice) 
+			{
 			case 1:
 				playRace(balance, 3, 100);
 				break;
@@ -298,39 +358,43 @@ int main()
 	int choice = 0;
 	cout << "Free balance given: 1000" << endl;
 	addBalance(1000);
-	cout << "Casino game selection: " << endl;
-	cout << "1. Blackjack" << endl;
-	cout << "2. Slots" << endl;
-	cout << "3. Roulette" << endl;
-	cout << "4. Horse Race" << endl;
-	cout << "5. Exit" << endl;
-	cin >> choice;
 
-	switch (choice)
+	while (playing)
 	{
-	case 1:
-		game = new Blackjack();
-		(*game).play();
-		break;
-	case 2:
-		game = new Slots();
-		(*game).play();
-		break;
-	case 3:
-		game = new Roulette();
-		(*game).play();
-		break;
-	case 4:
-		game = new HorseRace();
-		(*game).play();
-		break;
-	case 5:
-		cout << "Exiting..." << endl;
-		break;
-	default:
-		cout << "Invalid selection." << endl;
-		break;
+		cout << "Casino game selection: " << endl;
+		cout << "1. Blackjack" << endl;
+		cout << "2. Slots" << endl;
+		cout << "3. Roulette" << endl;
+		cout << "4. Horse Race" << endl;
+		cout << "5. Exit" << endl;
+		cin >> choice;
+
+		switch (choice)
+		{
+		case 1:
+			game = new Blackjack();
+			(*game).play();
+			break;
+		case 2:
+			game = new Slots();
+			(*game).play();
+			break;
+		case 3:
+			game = new Roulette();
+			(*game).play();
+			break;
+		case 4:
+			game = new HorseRace();
+			(*game).play();
+			break;
+		case 5:
+			cout << "Exiting..." << endl;
+			break;
+		default:
+			cout << "Invalid selection." << endl;
+			break;
+		}
+		delete game;
+		return 0;
 	}
-	delete game;
-	return 0;
 }
