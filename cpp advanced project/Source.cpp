@@ -57,16 +57,30 @@ private:
 		int frequency;
 	};
 	// Passes gen by ref using 'auto&' or 'default_random_engine&'
-	void drawHand(int hand[], int& count, card cards[], default_random_engine& generator, uniform_int_distribution<int>& distribution)
+	void drawCard(int hand[], int& count, card cards[], default_random_engine& generator, uniform_int_distribution<int>& distribution)
+	{
+		int drawnIndex;
+
+		do // keep generating rand num until card is available
+		{
+			drawnIndex = distribution(generator);
+		}
+		while (cards[drawnIndex].frequency <= 0);
+
+		hand[count] = drawnIndex; // Adds card to hand if available
+		count++;
+
+		cards[drawnIndex].frequency--; // Removes card from deck
+		cout << endl;
+	}
+
+	void printHand(const int hand[], int count, const card cards[])
 	{
 		cout << "Your Hand:";
-		for (int i = 0; i < 2; i++)
+		for (int i = 0; i < count; i++)
 		{
-			int drawnIndex = distribution(generator);
-			hand[count] = drawnIndex;
-			count++;
-
-			cout << " |" << cards[drawnIndex].name << "| ";
+			int cardIndex = hand[i];
+			cout << " |" << cards[cardIndex].name << "| ";
 		}
 		cout << endl;
 	}
@@ -116,9 +130,12 @@ public:
 
 		bet = getBet();
 
-		drawHand(hand, count, cards, generator, distribution);
+		drawCard(hand, count, cards, generator, distribution); // changed to drawHand to drawCard so at start 2 cards are drawn
+		drawCard(hand, count, cards, generator, distribution);
 
-		currentHandValue += calculateHandValue(hand, count, cards);
+		printHand(hand, count, cards); // printHand function added to display the player's hand instead of using drawHand
+		currentHandValue = calculateHandValue(hand, count, cards);
+
 		cout << "Current Hand Value: " << currentHandValue << endl;
 		cout << "Choose action: \n1. Hit\n2. Stand\n3. Double Down\n4. Forfeit(loses bet and exits blackjack)";
 		cin >> selectedAction;
@@ -129,8 +146,9 @@ public:
 			stand = false;
 			while ((!stand) && (currentHandValue < 20))
 			{
-				drawHand(hand, count, cards, generator, distribution);
-				currentHandValue += calculateHandValue(hand, count, cards);
+				drawCard(hand, count, cards, generator, distribution);
+				printHand(hand, count, cards);
+				currentHandValue = calculateHandValue(hand, count, cards); // changed from += to = so that currentHandValue is recalc instead of added to
 				cout << "Current Hand Value: " << currentHandValue << endl;
 				cout << "Choose action: \n1. Hit\n2. Stand\n3. Forfeit(loses bet and exits blackjack)";
 				cin >> selectedAction;
