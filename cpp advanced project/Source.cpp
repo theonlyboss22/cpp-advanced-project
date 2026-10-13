@@ -4,6 +4,7 @@ using namespace std;
 #include <fstream>
 #include <random>
 #include <chrono>
+#include <climits> // added to fix INT_MAX
 
 int balance = 0;
 bool playing = true;
@@ -26,7 +27,7 @@ public:
 		do
 		{
 			cout << "Enter your bet amount: \n";
-			cin.ignore(INT_MAX, '\n');
+			cin.ignore(INT_MAX, '\n'); // INT_MAX wasn't working because climit library wasn't included
 			cin >> betAmount;
 			if ((betAmount > balance || betAmount <= 0 || cin.fail()))
 			{
@@ -111,6 +112,23 @@ private:
 		return total;
 	}
 
+	// Win/Lose logic
+	bool evaluateHand(int currentHandValue, int currentBet)
+	{
+		if (currentHandValue == 21)
+		{
+			balance += currentBet;
+			cout << "Blackjack! You win!\nNew Balance: " << balance << "\n";
+			return true; // Round is over
+		}
+		else if (currentHandValue > 21)
+		{
+			balance -= currentBet;
+			cout << "You Busted!\nCurrent Balance: " << balance << ".\n";
+			return true; // Round is over
+		}
+		return false; // Game continues
+	}
 
 public:
 	void play() override
@@ -121,7 +139,8 @@ public:
 		int count = 0;
 		int currentHandValue = 0;
 		int selectedAction = 0;
-		bool playing = true;
+		bool playerTurn = true;
+
 		card cards[] = { {"2", 2, 4}, {"3", 3, 4}, {"4", 4, 4}, {"5", 5, 4}, {"6", 6, 4}, {"7", 7, 4}, {"8", 8, 4}, {"9", 9, 4}, {"10", 10, 4}, {"Jack", 10, 4}, {"Queen", 10, 4}, {"King", 10, 4}, {"Ace", 11, 4} };
 		uniform_int_distribution<int> distribution(0, (sizeof(cards) / sizeof(cards[0])) - 1); // changed index so it works
 		int randomNumber = distribution(generator);
@@ -130,59 +149,67 @@ public:
 
 		bet = getBet();
 
-		drawCard(hand, count, cards, generator, distribution); // changed to drawHand to drawCard so at start 2 cards are drawn
+		drawCard(hand, count, cards, generator, distribution); // changed to drawHand to drawCard so at start 2 cards are drawn. -Zane
 		drawCard(hand, count, cards, generator, distribution);
 
 		printHand(hand, count, cards); // printHand function added to display the player's hand instead of using drawHand
 		currentHandValue = calculateHandValue(hand, count, cards);
 
 		cout << "Current Hand Value: " << currentHandValue << endl;
-		cout << "Choose action: \n1. Hit\n2. Stand\n3. Double Down\n4. Forfeit(loses bet and exits blackjack)";
-		cin >> selectedAction;
-		switch (selectedAction)
+
+		// Check initial hand for win condition
+		if (evaluateHand(currentHandValue, bet))
 		{
-		case 1: //hit
-			bool stand;
-			stand = false;
-			while ((!stand) && (currentHandValue < 20))
+			return;
+		}
+
+		while (playerTurn) // Added to determine when player can and can't play. -Zane
+		{
+			cout << "Choose action: \n1. Hit\n2. Stand\n3. Double Down\n4. Forfeit(loses bet and exits blackjack)\n";
+			cin >> selectedAction;
+			switch (selectedAction)
 			{
+			case 1: //hit
+				bool stand;
+				stand = false;
 				drawCard(hand, count, cards, generator, distribution);
 				printHand(hand, count, cards);
-				currentHandValue = calculateHandValue(hand, count, cards); // changed from += to = so that currentHandValue is recalc instead of added to
+				currentHandValue = calculateHandValue(hand, count, cards); // changed from += to = so that currentHandValue is recalc instead of added to. -Zane
 				cout << "Current Hand Value: " << currentHandValue << endl;
-				cout << "Choose action: \n1. Hit\n2. Stand\n3. Forfeit(loses bet and exits blackjack)";
-				cin >> selectedAction;
-				if (selectedAction == 1) //hit
+
+				if (evaluateHand(currentHandValue, bet))
 				{
-					stand = false;
+					playerTurn = false;
 				}
-				else if (selectedAction == 2) //stand
+				break;
+			case 2: //stand
+				cout << "You stood with a hand value of " << currentHandValue << ".\n";
+				playerTurn = false;
+				break;
+			case 3: //double down
+				bet *= 2;
+				cout << "Double down selected. \nBet increased to: " << bet;
+				drawCard(hand, count, cards, generator, distribution); // Draws extra card now, logic was incorrect before. -Zane
+				printHand(hand, count, cards);
+				currentHandValue = calculateHandValue(hand, count, cards);
+				cout << "Current Hand Value: " << currentHandValue << endl;
+
+				if (!evaluateHand(currentHandValue, bet))
 				{
-					stand = true;
+					cout << "Stand after double down. Final value: " << currentHandValue << "\n";
 				}
-				else if (selectedAction == 3) //forfeit
-				{
-					balance -= bet;
-					cout << "You lost your bet of " << bet << ".\n";
-					playing = false;
-				}
+				playerTurn = false;
+				break;
+			case 4: //forfeit
+				balance -= bet;
+				cout << "You lost your bet of " << bet << ".\n";
+				playerTurn = false;
+				break;
+
+			default: // Added default didn't know if this was necessary but I added it just in case -Zane
+				cout << "Invalid action. Try again.\n";
+				break;
 			}
-			if (currentHandValue == 21)
-			{
-				cout << "Blackjack! You win!\nNew Balance: " << balance+(bet*3);
-			}
-			break;
-		case 2: //stand
-			
-			break;
-		case 3: //double down
-			bet *= 2;
-			cout << "Double down selected. \nBet increased to: " << bet;
-			break;
-		case 4: //forfeit
-			balance -= bet;
-			cout << "You lost your bet of " << bet << ".\n";
-			break;
 		}
 	}
 };
@@ -394,6 +421,13 @@ int main()
 		default:
 			cout << "Invalid selection." << endl;
 			break;
+		}
+
+		// Cleans up allocated memory after every loop iteration
+		if (game != nullptr)
+		{
+			delete game;
+			game = nullptr;
 		}
 	}
 	delete game;
