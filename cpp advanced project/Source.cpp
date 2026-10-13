@@ -5,6 +5,8 @@ using namespace std;
 #include <random>
 #include <chrono>
 #include <climits> // added to fix INT_MAX
+#include <vector> // added for roullette game to store pocket numbers. -Zane
+#include <algorithm> // added for find() function in roulette game. - Zane
 
 int balance = 0;
 bool playing = true;
@@ -220,14 +222,14 @@ public:
 	void play() override
 	{
 
-		//bool keepPlaying = true;
-		//while (keepPlaying)
-		//{
-			//if (balance <= 0)
-			//{
-				//cout << "Insufficient balance to spin again. Returning to main menu.\n";
-				//break;
-			//}
+		bool keepPlaying = true;
+		while (keepPlaying)
+		{
+			if (balance <= 0)
+			{
+				cout << "Insufficient balance to spin again. Returning to main menu.\n";
+				break;
+			}
 
 
 			cout << "Slots selected. \n";
@@ -275,25 +277,160 @@ public:
 			}
 			cout << "Current Balance: " << balance << "\n\n";
 
-			//int gameChoice = 0;
-			//cout << "Choose an option:\n1. Play Again\n2. Exit to Casino Menu\nChoice: ";
-			//cin >> gameChoice;
+			int gameChoice = 0;
+			cout << "Choose an option:\n1. Play Again\n2. Exit to Casino Menu\nChoice: ";
+			cin >> gameChoice;
 
-			//if (gameChoice == 2)
-			//{
-				//keepPlaying = false;
-			//}
-		//}
+			if (gameChoice == 2)
+			{
+				keepPlaying = false;
+			}
+		}
 	}
 };
 
-class Roulette : public Game
+class Roulette : public Game // Recycled code from previous project of mine, and from Slots + Blackjack. -Zane
 {
+private:
+	struct PocketGroup // holds color name and associated pocket numbers
+	{
+		string colorName; 
+		vector<int> pocketNumbers;
+	};
+
 public:
 	void play() override
 	{
-		cout << "Roulette selected. \n";
-		bet = getBet();
+		bool keepPlaying = true;
+		while (keepPlaying)
+		{
+			if (balance <= 0)
+			{
+				cout << "Insufficient balance to play Roulette. Returning to main menu.\n";
+				break;
+			}
+
+			cout << "Roulette selected. \n";
+			bet = getBet();
+			balance -= bet;
+
+			int choice = 0;
+			int specificNumberBet = -1; // To store the chosen number if applicable
+			cout << "\nChoose your bet type:\n";
+			cout << "1. Red (Pays 2x)\n";
+			cout << "2. Black (Pays 2x)\n";
+			cout << "3. Even (Pays 2x)\n";
+			cout << "4. Odd (Pays 2x)\n";
+			cout << "5. Specific Number (0-36) (Pays 35x)\n";
+			cout << "Choice: ";
+			cin >> choice;
+
+			if (choice == 5)
+			{
+				cout << "Enter a number to bet on (0-36): ";
+				cin >> specificNumberBet;
+				if (specificNumberBet < 0 || specificNumberBet > 36)
+				{
+					cout << "Invalid number. Returning your bet and exiting to menu.\n";
+					balance += bet;
+					break;
+				}
+			}
+			else if (choice < 1 || choice > 4)
+			{
+				cout << "Invalid choice. Returning your bet and exiting to menu.\n";
+				balance += bet;
+				break;
+			}
+
+			default_random_engine generator(random_device{}());
+			uniform_int_distribution<int> wheelDistribution(0, 36);
+			int winningPocket = wheelDistribution(generator);
+
+			cout << "\nThe roulette wheel spins...\n";
+			cout << "Winning Number: " << winningPocket << endl;
+
+			PocketGroup blackGroup = { "Black", {2, 4, 6, 8, 10, 11, 13, 15, 17, 20, 22, 24, 26, 28, 29, 31, 33, 35} }; 
+			PocketGroup redGroup = { "Red", {1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36} };
+			PocketGroup greenGroup = { "Green", {0} };
+
+			vector<PocketGroup> allPocketGroups = { blackGroup, redGroup, greenGroup }; // Groups all pocket groups into a vector for easier access
+			vector<int> targetNumbers = { winningPocket }; // holds the winning pocket number for comparison
+
+			string winningColor = "";
+			for (int target : targetNumbers)
+			{
+				for (const auto& group : allPocketGroups) // searches through each pocket group to find the winning color
+				{
+					if (find(group.pocketNumbers.begin(), group.pocketNumbers.end(), target) != group.pocketNumbers.end())
+					{
+						winningColor = group.colorName;
+						cout << group.colorName << endl;
+					}
+				}
+			}
+
+			bool isEven = false;
+			if (winningPocket == 0) // checks if the winning pocket is 0
+			{
+				// Zero is neither even nor odd
+			}
+			else if (winningPocket % 2 == 0) // check for even logic
+			{
+				cout << "Even" << endl;
+				isEven = true;
+			}
+			else // check for odd logic
+			{
+				cout << "Odd" << endl;
+				isEven = false;
+			}
+
+			bool won = false;
+			if (choice == 1 && winningColor == "Red")
+			{
+				won = true;
+			}
+			else if (choice == 2 && winningColor == "Black")
+			{
+				won = true;
+			}
+			else if (choice == 3 && winningPocket != 0 && isEven)
+			{
+				won = true;
+			}
+			else if (choice == 4 && winningPocket != 0 && !isEven)
+			{
+				won = true;
+			}
+			else if (choice == 5 && winningPocket == specificNumberBet)
+			{
+				won = true;
+				int payoutMultiplier = 35; 
+			}
+
+			if (won)
+			{
+				int winnings = bet * 2;
+				balance += winnings;
+				cout << "You won! Payout: +" << winnings << "\n";
+			}
+			else
+			{
+				cout << "You lost your bet.\n";
+			}
+
+			cout << "Current Balance: " << balance << "\n\n";
+
+			int gameChoice = 0;
+			cout << "Choose an option:\n1. Play Again\n2. Exit to Casino Menu\nChoice: ";
+			cin >> gameChoice;
+
+			if (gameChoice == 2)
+			{
+				keepPlaying = false;
+			}
+		}
 	}
 };
 
