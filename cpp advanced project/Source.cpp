@@ -192,8 +192,71 @@ class Slots : public Game
 public:
 	void play() override
 	{
-		cout << "Slots selected. \n";
-		bet = getBet();
+
+		//bool keepPlaying = true;
+		//while (keepPlaying)
+		//{
+			//if (balance <= 0)
+			//{
+				//cout << "Insufficient balance to spin again. Returning to main menu.\n";
+				//break;
+			//}
+
+
+			cout << "Slots selected. \n";
+
+			bet = getBet();
+			balance -= bet;
+
+			// equal chance for numbers to be chosen
+			int symbolPool[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0 };
+			int poolSize = sizeof(symbolPool) / sizeof(symbolPool[0]);
+
+			// 3 x 1 reel
+			int reel1 = symbolPool[rand() % poolSize];
+			int reel2 = symbolPool[rand() % poolSize];
+			int reel3 = symbolPool[rand() % poolSize];
+
+			// display
+			cout << "\n=========================\n";
+			cout << "  [ " << reel1 << " ]  [ " << reel2 << " ]  [ " << reel3 << " ] \n";
+			cout << "=========================\n\n";
+
+			// results
+			if (reel1 == reel2 && reel2 == reel3)
+			{
+				if (reel1 == 7)
+				{
+					// jackpot
+					int winnings = bet * 10;
+					balance += winnings;
+					cout << "!! JACKPOT !! Three 7s!\n";
+					cout << "You won 10x your bet: +" << winnings << "\n";
+				}
+				else
+				{
+					// others
+					int winnings = bet * 2;
+					balance += winnings;
+					cout << "Match! Three of a kind!\n";
+					cout << "You won 2x your bet: +" << winnings << "\n";
+				}
+			}
+			else
+			{
+				cout << "No match. Better luck next spin!\n";
+			}
+			cout << "Current Balance: " << balance << "\n\n";
+
+			//int gameChoice = 0;
+			//cout << "Choose an option:\n1. Play Again\n2. Exit to Casino Menu\nChoice: ";
+			//cin >> gameChoice;
+
+			//if (gameChoice == 2)
+			//{
+				//keepPlaying = false;
+			//}
+		//}
 	}
 };
 
