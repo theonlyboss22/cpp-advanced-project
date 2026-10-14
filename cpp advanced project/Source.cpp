@@ -220,14 +220,14 @@ public:
 	void play() override
 	{
 
-		//bool keepPlaying = true;
-		//while (keepPlaying)
-		//{
-			//if (balance <= 0)
-			//{
-				//cout << "Insufficient balance to spin again. Returning to main menu.\n";
-				//break;
-			//}
+		bool keepPlaying = true;
+		while (keepPlaying)
+		{
+			if (balance <= 0)
+			{
+				cout << "Insufficient balance to spin again. Returning to main menu.\n";
+				break;
+			}
 
 
 			cout << "Slots selected. \n";
@@ -275,15 +275,15 @@ public:
 			}
 			cout << "Current Balance: " << balance << "\n\n";
 
-			//int gameChoice = 0;
-			//cout << "Choose an option:\n1. Play Again\n2. Exit to Casino Menu\nChoice: ";
-			//cin >> gameChoice;
+			int gameChoice = 0;
+			cout << "Choose an option:\n1. Play Again\n2. Exit to Casino Menu\nChoice: ";
+			cin >> gameChoice;
 
-			//if (gameChoice == 2)
-			//{
-				//keepPlaying = false;
-			//}
-		//}
+			if (gameChoice == 2)
+			{
+				keepPlaying = false;
+			}
+		}
 	}
 };
 
