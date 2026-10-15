@@ -455,7 +455,7 @@ public:
 		int randomNumber = rand() % 100;
 
 		if (randomNumber < 50) {
-			distance += 0;
+			distance += 0.59;
 		}
 		else if (randomNumber < 80) {
 			distance += 1.09;
@@ -519,7 +519,164 @@ private:
 			string startChoice;
 
 			while (true) {
+				cout << "HORSE RACE\n" << endl;
 
+				cout << "Balance: $" << balance << endl;
+				cout << "\nHorse:" << endl;
+				for (int i = 0; i < horseCount; i++) {
+					cout << i + 1 << ". " << horses[i].getName() << endl;
+				}
+
+				cout << "\nChoose your horse: " << endl;
+				cin >> selectHorse;
+
+				if (selectHorse < 1 || selectHorse > horseCount) {
+					cout << "Invalid selection." << endl;
+					continue;
+				}
+
+				bet = getBet();
+
+				cout << "\nYou selected " << horses[selectHorse - 1].getName() << endl;
+				cout << "Bet: $" << bet << endl;
+
+				cout << "\nStart race? (yes/no): " << endl;
+				cin >> startChoice;
+
+				if (startChoice == "yes") {
+					break;
+				}
+				else if (startChoice == "no") {
+					cout << "\nnChoose your horse and bet again." << endl;
+				}
+				else {
+					cout << "Invalid Enter, try again." << endl;
+				}
+			}
+
+			// Take Bet
+			balance -= bet;
+
+			// Race
+			int finishedHorses = 0;
+
+			cout << "RACE START!\n" << endl;
+			while (finishedHorses < horseCount) {
+				for (int i = 0; i < horseCount; i++) {
+					if (!horses[i].isFinished()) {
+						horses[i].run();
+
+						if (horses[i].getDistance() >= finishValue) {
+							finishedHorses++;
+
+							horses[i].setFinished(true);
+							horses[i].setPlace(finishedHorses);
+
+							cout << horses[i].getName() << " finished in plance " << finishedHorses << "!" << endl;
+						}
+					}
+				}
+			}
+
+			// Show Results
+			cout << "RACE RESULTS" << endl;
+
+			for (int place = 1; place <= horseCount; place++) {
+				for (int i = 0; i < horseCount; i++) {
+					if (horses[i].getPlace() == place) {
+						cout << place << ". " << horses[i].getName() << endl;
+					}
+				}
+			}
+
+			// Determine Multiplier
+			double multiplier = 0;
+			int playerPlace = horses[selectedHorse - 1].getPlace();
+			
+			if (horseCount == 3) {
+				if (playerPlace == 1) {
+					multiplier = 2.0;
+				}
+			}
+			else if (horseCount == 5) {
+				if (playerPlace == 1) {
+					multiplier = 3.0;
+				}
+				else if (playerPlace == 2) {
+					multiplier = 2.0;
+				}
+				else if (playerPlace == 3) {
+					multiplier = 1.5;
+				}
+			}
+			else if (horseCount == 7) {
+				if (playerPlace == 1) {
+					multiplier = 4.0;
+				}
+				else if (playerPlace == 2) {
+					multiplier = 3.0;
+				}
+				else if (playerPlace == 3) {
+					multiplier = 2.0;
+				}
+				else if (playerPlace == 3) {
+					multiplier = 1.5;
+				}
+			}
+			else if (horseCount == 10) {
+				if (playerPlace == 1) {
+					multiplier = 5.0;
+				}
+				else if (playerPlace == 2) {
+					multiplier = 4.0;
+				}
+				else if (playerPlace == 3) {
+					multiplier = 3.0;
+				}
+				else if (playerPlace == 4) {
+					multiplier = 2.0;
+				}
+				else if (playerPlace == 5) {
+					multiplier = 1.5;
+				}
+			}
+
+			//Payout Amount
+			cout << "\nYour horse: " << horses[selectedHorse - 1].getName() << endl;
+			cout << "Your horse finished in place " << playerPlace << "." << endl;
+
+			if (multiplier > 0) {
+				int payout = bet * multiplier;
+				balance += payout;
+
+				cout << "Multiplier: x" << multiplier << endl;
+				cout << "You won: $" << payout << endl;
+			}
+			else {
+				cout << "Multiplier: N/A" << endl;
+				cout << "You lost your bet." << endl
+			}
+
+			cout << "\nCurrent balance: $" << balance << encl;
+
+			//Play Again / Back
+			string nextChoice;
+			while (true) {
+				cout << "\nType 'again' to play this area again" << endl;
+				cout << "\nType 'back' to play this area again" << endl;
+
+				cout << "ChoiceL " << endl;
+				cin >> nextChoice;
+
+				if (nextChoice == "again") {
+					break;
+				}
+				else if (nextChoice == "back") {
+					return;
+				}
+				else {
+					cout << "Invalid choice." << endl;
+				}
 			}
 
 		}
