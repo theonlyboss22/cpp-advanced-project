@@ -524,7 +524,7 @@ private:
 				cout << "Balance: $" << balance << endl;
 				cout << "\nHorse:" << endl;
 				for (int i = 0; i < horseCount; i++) {
-					cout << i + 1 << ". " << horses[i].getName() << endl;
+					cout << i + 1 << ". " << horse[i].getName() << endl;
 				}
 
 				cout << "\nChoose your horse: " << endl;
@@ -537,7 +537,7 @@ private:
 
 				bet = getBet();
 
-				cout << "\nYou selected " << horses[selectHorse - 1].getName() << endl;
+				cout << "\nYou selected " << horse[selectHorse - 1].getName() << endl;
 				cout << "Bet: $" << bet << endl;
 
 				cout << "\nStart race? (yes/no): " << endl;
@@ -563,16 +563,16 @@ private:
 			cout << "RACE START!\n" << endl;
 			while (finishedHorses < horseCount) {
 				for (int i = 0; i < horseCount; i++) {
-					if (!horses[i].isFinished()) {
-						horses[i].run();
+					if (!horse[i].isFinished()) {
+						horse[i].run();
 
-						if (horses[i].getDistance() >= finishValue) {
+						if (horse[i].getDistance() >= finishValue) {
 							finishedHorses++;
 
-							horses[i].setFinished(true);
-							horses[i].setPlace(finishedHorses);
+							horse[i].setFinished(true);
+							horse[i].setPlace(finishedHorses);
 
-							cout << horses[i].getName() << " finished in plance " << finishedHorses << "!" << endl;
+							cout << horse[i].getName() << " finished in plance " << finishedHorses << "!" << endl;
 						}
 					}
 				}
@@ -583,15 +583,15 @@ private:
 
 			for (int place = 1; place <= horseCount; place++) {
 				for (int i = 0; i < horseCount; i++) {
-					if (horses[i].getPlace() == place) {
-						cout << place << ". " << horses[i].getName() << endl;
+					if (horse[i].getPlace() == place) {
+						cout << place << ". " << horse[i].getName() << endl;
 					}
 				}
 			}
 
 			// Determine Multiplier
 			double multiplier = 0;
-			int playerPlace = horses[selectedHorse - 1].getPlace();
+			int playerPlace = horse[selectHorse - 1].getPlace();
 			
 			if (horseCount == 3) {
 				if (playerPlace == 1) {
@@ -642,7 +642,7 @@ private:
 			}
 
 			//Payout Amount
-			cout << "\nYour horse: " << horses[selectedHorse - 1].getName() << endl;
+			cout << "\nYour horse: " << horse[selectHorse - 1].getName() << endl;
 			cout << "Your horse finished in place " << playerPlace << "." << endl;
 
 			if (multiplier > 0) {
@@ -654,10 +654,10 @@ private:
 			}
 			else {
 				cout << "Multiplier: N/A" << endl;
-				cout << "You lost your bet." << endl
+				cout << "You lost your bet." << endl;
 			}
 
-			cout << "\nCurrent balance: $" << balance << encl;
+			cout << "\nCurrent balance: $" << balance << endl;
 
 			//Play Again / Back
 			string nextChoice;
