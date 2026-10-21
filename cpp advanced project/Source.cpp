@@ -532,6 +532,16 @@ private:
 				cout << "\nChoose your horse: " << endl;
 				cin >> selectHorse;
 
+				if (cin.fail())
+				{
+					cout << "Invalid input. Please enter a number.\n";
+
+					cin.clear();
+					cin.ignore(INT_MAX, '\n');
+
+					continue;
+				}
+
 				if (selectHorse < 1 || selectHorse > horseCount) {
 					cout << "Invalid selection." << endl;
 					continue;
@@ -562,7 +572,10 @@ private:
 			// Race
 			int finishedHorses = 0;
 
-			cout << "RACE START!\n" << endl;
+			cout << "==========================" << endl;
+			cout << "      RACE START!" << endl;
+			cout << "==========================\n" << endl;
+
 			while (finishedHorses < horseCount) {
 				for (int i = 0; i < horseCount; i++) {
 					if (!horse[i].isFinished()) {
@@ -623,7 +636,7 @@ private:
 				else if (playerPlace == 3) {
 					multiplier = 2.0;
 				}
-				else if (playerPlace == 3) {
+				else if (playerPlace == 4) {
 					multiplier = 1.5;
 				}
 			}
@@ -698,9 +711,18 @@ public:
 			cout << "==========================" << endl;
 			cout << "    Horse Race selected" << endl;
 			cout << "==========================" << endl;
-			bet = getBet();
 
 			cout << "\n Choose an area: " << endl;
+
+			if (cin.fail())
+			{
+				cout << "Invalid input. Please enter a number.\n";
+
+				cin.clear();
+				cin.ignore(INT_MAX, '\n');
+
+				continue;
+			}
 
 			cout << "1.Small Area			(3  horses)" << endl;
 			cout << "2.Medium Area			(5  horses)" << endl;
@@ -731,7 +753,8 @@ public:
 				break;
 
 			case 5:
-				break;
+				cout << "Returning to Game Menu\n" << endl;
+				return;
 			default:
 				cout << "Invalid selection." << endl;
 				break;
