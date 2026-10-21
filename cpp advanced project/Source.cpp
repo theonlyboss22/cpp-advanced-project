@@ -519,7 +519,9 @@ private:
 			string startChoice;
 
 			while (true) {
-				cout << "HORSE RACE\n" << endl;
+				cout << "==========================" << endl;
+				cout << "       HORSE RACE" << endl;
+				cout << "==========================\n" << endl;
 
 				cout << "Balance: $" << balance << endl;
 				cout << "\nHorse:" << endl;
@@ -579,7 +581,9 @@ private:
 			}
 
 			// Show Results
-			cout << "RACE RESULTS" << endl;
+			cout << "==========================" << endl;
+			cout << "       RACE RESULTS" << endl;
+			cout << "==========================\n" << endl;
 
 			for (int place = 1; place <= horseCount; place++) {
 				for (int i = 0; i < horseCount; i++) {
@@ -663,9 +667,9 @@ private:
 			string nextChoice;
 			while (true) {
 				cout << "\nType 'again' to play this area again" << endl;
-				cout << "\nType 'back' to play this area again" << endl;
+				cout << "Type 'back' to choose another area" << endl;
 
-				cout << "ChoiceL " << endl;
+				cout << "\nChoice: " << endl;
 				cin >> nextChoice;
 
 				if (nextChoice == "again") {
@@ -691,7 +695,9 @@ public:
 				break;
 			}
 
-			cout << "Horse Race selected. \n";
+			cout << "==========================" << endl;
+			cout << "    Horse Race selected" << endl;
+			cout << "==========================" << endl;
 			bet = getBet();
 
 			cout << "\n Choose an area: " << endl;
