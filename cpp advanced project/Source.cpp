@@ -67,8 +67,7 @@ private:
 		do // keep generating rand num until card is available
 		{
 			drawnIndex = distribution(generator);
-		}
-		while (cards[drawnIndex].frequency <= 0);
+		} while (cards[drawnIndex].frequency <= 0);
 
 		hand[count] = drawnIndex; // Adds card to hand if available
 		count++;
@@ -142,6 +141,7 @@ public:
 		int currentHandValue = 0;
 		int selectedAction = 0;
 		bool playerTurn = true;
+		bool doubleDownLock = false;
 
 		card cards[] = { {"2", 2, 4}, {"3", 3, 4}, {"4", 4, 4}, {"5", 5, 4}, {"6", 6, 4}, {"7", 7, 4}, {"8", 8, 4}, {"9", 9, 4}, {"10", 10, 4}, {"Jack", 10, 4}, {"Queen", 10, 4}, {"King", 10, 4}, {"Ace", 11, 4} };
 		uniform_int_distribution<int> distribution(0, (sizeof(cards) / sizeof(cards[0])) - 1); // changed index so it works
@@ -167,7 +167,14 @@ public:
 
 		while (playerTurn) // Added to determine when player can and can't play. -Zane
 		{
-			cout << "Choose action: \n1. Hit\n2. Stand\n3. Double Down\n4. Forfeit(loses bet and exits blackjack)\n";
+			if (doubleDownLock == false)
+			{
+				cout << "Choose action: \n1. Hit\n2. Stand\n3. Double Down\n4. Forfeit(loses bet and exits blackjack)\n";
+			}
+			else
+			{
+				cout << "Choose action: \n1. Hit\n2. Stand\n4. Forfeit(loses bet and exits blackjack)\n";
+			}
 			cin >> selectedAction;
 			switch (selectedAction)
 			{
@@ -183,29 +190,41 @@ public:
 				{
 					playerTurn = false;
 				}
+				doubleDownLock = true; // Locks double down after first action.
 				break;
 			case 2: //stand
 				cout << "You stood with a hand value of " << currentHandValue << ".\n";
 				playerTurn = false;
+				doubleDownLock = true; // Locks double down after first action.
 				break;
 			case 3: //double down
-				bet *= 2;
-				cout << "Double down selected. \nBet increased to: " << bet;
-				drawCard(hand, count, cards, generator, distribution); // Draws extra card now, logic was incorrect before. -Zane
-				printHand(hand, count, cards);
-				currentHandValue = calculateHandValue(hand, count, cards);
-				cout << "Current Hand Value: " << currentHandValue << endl;
-
-				if (!evaluateHand(currentHandValue, bet))
+				if (doubleDownLock == false)
 				{
-					cout << "Stand after double down. Final value: " << currentHandValue << "\n";
+					bet *= 2;
+					cout << "Double down selected. \nBet increased to: " << bet;
+					drawCard(hand, count, cards, generator, distribution); // Draws extra card now, logic was incorrect before. -Zane
+					printHand(hand, count, cards);
+					currentHandValue = calculateHandValue(hand, count, cards);
+					cout << "Current Hand Value: " << currentHandValue << endl;
+
+
+					if (!evaluateHand(currentHandValue, bet))
+					{
+						cout << "Stand after double down. Final value: " << currentHandValue << "\n";
+					}
+					playerTurn = false;
+					doubleDownLock = true; // Locks double down after first action.
 				}
-				playerTurn = false;
+				else
+				{
+					cout << "Invalid action. Try again.\n";
+				}
 				break;
 			case 4: //forfeit
 				balance -= bet;
 				cout << "You lost your bet of " << bet << ".\n";
 				playerTurn = false;
+				doubleDownLock = true; // Locks double down after first action.
 				break;
 
 			default: // Added default didn't know if this was necessary but I added it just in case -Zane
@@ -294,7 +313,7 @@ class Roulette : public Game // Recycled code from previous project of mine, and
 private:
 	struct PocketGroup // holds color name and associated pocket numbers
 	{
-		string colorName; 
+		string colorName;
 		vector<int> pocketNumbers;
 	};
 
@@ -350,7 +369,7 @@ public:
 			cout << "\nThe roulette wheel spins...\n";
 			cout << "Winning Number: " << winningPocket << endl;
 
-			PocketGroup blackGroup = { "Black", {2, 4, 6, 8, 10, 11, 13, 15, 17, 20, 22, 24, 26, 28, 29, 31, 33, 35} }; 
+			PocketGroup blackGroup = { "Black", {2, 4, 6, 8, 10, 11, 13, 15, 17, 20, 22, 24, 26, 28, 29, 31, 33, 35} };
 			PocketGroup redGroup = { "Red", {1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36} };
 			PocketGroup greenGroup = { "Green", {0} };
 
@@ -406,7 +425,7 @@ public:
 			else if (choice == 5 && winningPocket == specificNumberBet)
 			{
 				won = true;
-				int payoutMultiplier = 35; 
+				int payoutMultiplier = 35;
 			}
 
 			if (won)
@@ -609,7 +628,7 @@ private:
 			// Determine Multiplier
 			double multiplier = 0;
 			int playerPlace = horse[selectHorse - 1].getPlace();
-			
+
 			if (horseCount == 3) {
 				if (playerPlace == 1) {
 					multiplier = 2.0;
@@ -734,7 +753,7 @@ public:
 			cout << "\nChoice: " << endl;
 			cin >> choice;
 
-			switch (choice) 
+			switch (choice)
 			{
 			case 1:
 				playRace(balance, 3, 100);
