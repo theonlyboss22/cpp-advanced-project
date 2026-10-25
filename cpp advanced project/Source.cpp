@@ -76,6 +76,17 @@ private:
 		cout << endl;
 	}
 
+	void printDealerHand(const int hand[], int count, const card cards[]) // new print function to display dealer hand instead of player (worth noting that its at this point in which a good programmer would refactor all of this dealer vs player stuff into classes using inheritance lmao) - Dom
+	{
+		cout << "Dealer Hand:";
+		for (int i = 0; i < count; i++)
+		{
+			int cardIndex = hand[i];
+			cout << " |" << cards[cardIndex].name << "| ";
+		}
+		cout << endl;
+	}
+
 	void printHand(const int hand[], int count, const card cards[])
 	{
 		cout << "Your Hand:";
@@ -114,7 +125,7 @@ private:
 	}
 
 	// Win/Lose logic
-	bool evaluateHand(int currentHandValue, int currentBet)
+	bool evaluateHand(int currentHandValue, int currentDealerHandValue, int currentBet)
 	{
 		if (currentHandValue == 21)
 		{
@@ -125,9 +136,33 @@ private:
 		else if (currentHandValue > 21)
 		{
 			balance -= currentBet;
-			cout << "You Busted!\nCurrent Balance: " << balance << ".\n";
+			cout << "You Busted!\nCurrent Balance: " << balance << "\n";
 			return true; // Round is over
 		}
+		else if (currentDealerHandValue > 21)
+		{
+			balance += currentBet;
+			cout << "Dealer Busted! You win!\nNew Balance: " << balance << "\n";
+			return true; // Round is over
+		}
+		else if (currentHandValue > currentDealerHandValue && currentDealerHandValue >= 17)
+		{
+			balance += currentBet;
+			cout << "You win!\nNew Balance: " << balance << "\n";
+			return true; // Round is over
+		}
+		else if (currentHandValue < currentDealerHandValue && currentDealerHandValue >= 17)
+		{
+			balance -= currentBet;
+			cout << "You lose!\nCurrent Balance: " << balance << "\n";
+			return true; // Round is over
+		}
+		else if (currentHandValue == currentDealerHandValue && currentDealerHandValue >= 17)
+		{
+			cout << "Push! No one wins.\nCurrent Balance: " << balance << "\n";
+			return true; // Round is over
+		}
+		else
 		return false; // Game continues
 	}
 
@@ -136,31 +171,37 @@ public:
 	{
 		default_random_engine generator(random_device{}());
 
+		int dealerHand[11];
+		int dealerCount = 0;
 		int hand[11];
 		int count = 0;
 		int currentHandValue = 0;
+		int currentDealerHandValue = 0;
 		int selectedAction = 0;
 		bool playerTurn = true;
 		bool doubleDownLock = false;
 
 		card cards[] = { {"2", 2, 4}, {"3", 3, 4}, {"4", 4, 4}, {"5", 5, 4}, {"6", 6, 4}, {"7", 7, 4}, {"8", 8, 4}, {"9", 9, 4}, {"10", 10, 4}, {"Jack", 10, 4}, {"Queen", 10, 4}, {"King", 10, 4}, {"Ace", 11, 4} };
 		uniform_int_distribution<int> distribution(0, (sizeof(cards) / sizeof(cards[0])) - 1); // changed index so it works
-		int randomNumber = distribution(generator);
 
 		cout << "Blackjack selected. \n";
 
 		bet = getBet();
 
 		drawCard(hand, count, cards, generator, distribution); // changed to drawHand to drawCard so at start 2 cards are drawn. -Zane
+		drawCard(dealerHand, dealerCount, cards, generator, distribution); // draws initial dealer card with new variables to store dealer hand seperatley - Dom
 		drawCard(hand, count, cards, generator, distribution);
 
+		printDealerHand(dealerHand, dealerCount, cards);
 		printHand(hand, count, cards); // printHand function added to display the player's hand instead of using drawHand
+		drawCard(dealerHand, dealerCount, cards, generator, distribution); // draws second dealer card after displaying previous cards to simulate it being face down until later in the game - Dom
 		currentHandValue = calculateHandValue(hand, count, cards);
+		currentDealerHandValue = calculateHandValue(dealerHand, dealerCount, cards);
 
 		cout << "Current Hand Value: " << currentHandValue << endl;
 
 		// Check initial hand for win condition
-		if (evaluateHand(currentHandValue, bet))
+		if (evaluateHand(currentHandValue, currentDealerHandValue, bet))
 		{
 			return;
 		}
@@ -182,11 +223,13 @@ public:
 				bool stand;
 				stand = false;
 				drawCard(hand, count, cards, generator, distribution);
+				printDealerHand(dealerHand, dealerCount, cards);
 				printHand(hand, count, cards);
 				currentHandValue = calculateHandValue(hand, count, cards); // changed from += to = so that currentHandValue is recalc instead of added to. -Zane
+				currentDealerHandValue = calculateHandValue(dealerHand, dealerCount, cards);
 				cout << "Current Hand Value: " << currentHandValue << endl;
 
-				if (evaluateHand(currentHandValue, bet))
+				if (evaluateHand(currentHandValue, currentDealerHandValue, bet))
 				{
 					playerTurn = false;
 				}
@@ -194,6 +237,12 @@ public:
 				break;
 			case 2: //stand
 				cout << "You stood with a hand value of " << currentHandValue << ".\n";
+				while (currentDealerHandValue < 17)
+				{
+					drawCard(dealerHand, dealerCount, cards, generator, distribution);
+					currentDealerHandValue = calculateHandValue(dealerHand, dealerCount, cards);
+				}
+				printDealerHand(dealerHand, dealerCount, cards);
 				playerTurn = false;
 				doubleDownLock = true; // Locks double down after first action.
 				break;
@@ -203,15 +252,12 @@ public:
 					bet *= 2;
 					cout << "Double down selected. \nBet increased to: " << bet;
 					drawCard(hand, count, cards, generator, distribution); // Draws extra card now, logic was incorrect before. -Zane
+					printDealerHand(dealerHand, dealerCount, cards);
 					printHand(hand, count, cards);
 					currentHandValue = calculateHandValue(hand, count, cards);
-					cout << "Current Hand Value: " << currentHandValue << endl;
-
-
-					if (!evaluateHand(currentHandValue, bet))
-					{
-						cout << "Stand after double down. Final value: " << currentHandValue << "\n";
-					}
+					currentDealerHandValue = calculateHandValue(dealerHand, dealerCount, cards);
+					cout << "Stand after double down. Final value: " << currentHandValue << "\n";
+					evaluateHand(currentHandValue, currentDealerHandValue, bet);
 					playerTurn = false;
 					doubleDownLock = true; // Locks double down after first action.
 				}
