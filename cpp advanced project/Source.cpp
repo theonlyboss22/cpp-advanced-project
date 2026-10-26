@@ -125,7 +125,7 @@ private:
 	}
 
 	// Win/Lose logic
-	bool evaluateHand(int currentHandValue, int currentDealerHandValue, int currentBet)
+	bool evaluateHand(int currentHandValue, int currentDealerHandValue, int currentBet, bool stand)
 	{
 		if (currentHandValue == 21)
 		{
@@ -151,13 +151,13 @@ private:
 			cout << "You win!\nNew Balance: " << balance << "\n";
 			return true; // Round is over
 		}
-		else if (currentHandValue < currentDealerHandValue && currentDealerHandValue >= 17)
+		else if (currentHandValue < currentDealerHandValue && currentDealerHandValue >= 17 && stand == true)
 		{
 			balance -= currentBet;
 			cout << "You lose!\nCurrent Balance: " << balance << "\n";
 			return true; // Round is over
 		}
-		else if (currentHandValue == currentDealerHandValue && currentDealerHandValue >= 17)
+		else if (currentHandValue == currentDealerHandValue && currentDealerHandValue >= 17 && stand == true)
 		{
 			cout << "Push! No one wins.\nCurrent Balance: " << balance << "\n";
 			return true; // Round is over
@@ -201,7 +201,7 @@ public:
 		cout << "Current Hand Value: " << currentHandValue << endl;
 
 		// Check initial hand for win condition
-		if (evaluateHand(currentHandValue, currentDealerHandValue, bet))
+		if (evaluateHand(currentHandValue, currentDealerHandValue, bet, false/*bool for if standing*/))
 		{
 			return;
 		}
@@ -220,8 +220,6 @@ public:
 			switch (selectedAction)
 			{
 			case 1: //hit
-				bool stand;
-				stand = false;
 				drawCard(hand, count, cards, generator, distribution);
 				printDealerHand(dealerHand, dealerCount, cards);
 				printHand(hand, count, cards);
@@ -229,7 +227,7 @@ public:
 				currentDealerHandValue = calculateHandValue(dealerHand, dealerCount, cards);
 				cout << "Current Hand Value: " << currentHandValue << endl;
 
-				if (evaluateHand(currentHandValue, currentDealerHandValue, bet))
+				if (evaluateHand(currentHandValue, currentDealerHandValue, bet, false/*bool for if standing*/))
 				{
 					playerTurn = false;
 				}
@@ -245,6 +243,7 @@ public:
 				printDealerHand(dealerHand, dealerCount, cards);
 				playerTurn = false;
 				doubleDownLock = true; // Locks double down after first action.
+				evaluateHand(currentHandValue, currentDealerHandValue, bet, true/*bool for if standing*/);
 				break;
 			case 3: //double down
 				if (doubleDownLock == false)
@@ -257,9 +256,9 @@ public:
 					currentHandValue = calculateHandValue(hand, count, cards);
 					currentDealerHandValue = calculateHandValue(dealerHand, dealerCount, cards);
 					cout << "Stand after double down. Final value: " << currentHandValue << "\n";
-					evaluateHand(currentHandValue, currentDealerHandValue, bet);
 					playerTurn = false;
 					doubleDownLock = true; // Locks double down after first action.
+					evaluateHand(currentHandValue, currentDealerHandValue, bet, true/*bool for if standing*/);
 				}
 				else
 				{
