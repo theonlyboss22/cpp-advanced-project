@@ -8,6 +8,15 @@ using namespace std;
 #include <vector> // added for roullette game to store pocket numbers. -Zane
 #include <algorithm> // added for find() function in roulette game. - Zane
 
+const int MAX_ACCOUNTS = 5;
+
+struct Account // Account Information
+{
+	string username;
+	string password;
+	int balance;
+};
+
 int balance = 0;
 bool playing = true;
 
@@ -24,6 +33,19 @@ private:
 public:
 	int bet = 0;
 	virtual void play() = 0;
+
+	virtual ~Game()
+	{
+
+	}
+
+	virtual void play(Account& account) // compatible with games' play() function and synchronize account balance
+	{
+		balance = account.balance;
+		play();
+		account.balance = balance;
+	}
+
 	int getBet()
 	{
 		do
@@ -560,7 +582,7 @@ public:
 class HorseRace : public Game
 {
 private:
-	void playRace(int balance, int horseCount, double finishValue) {
+	void playRace(int& balance, int horseCount, double finishValue) {
 		while (true) {
 
 			// Horse Number
@@ -623,7 +645,7 @@ private:
 					break;
 				}
 				else if (startChoice == "no") {
-					cout << "\nnChoose your horse and bet again." << endl;
+					cout << "\nChoose your horse and bet again." << endl;
 				}
 				else {
 					cout << "Invalid Enter, try again." << endl;
@@ -830,12 +852,129 @@ public:
 
 int main()
 {
-	// create game instances
-	Game* game = nullptr;
-	int choice = 0;
-	cout << "Free balance given: 1000" << endl;
-	addBalance(1000);
+	// ACCOUNT SYSTEM
+	Account accounts[MAX_ACCOUNTS];
+	int accountCount = 0;
+	int currentAccount = -1;
+	int choice;
+	string username;
+	string password;
 
+	// read saved accounts from file
+	ifstream inFile("accounts.txt");
+	if (inFile)
+	{
+		while (accountCount < MAX_ACCOUNTS &&
+			inFile >> accounts[accountCount].username
+			>> accounts[accountCount].password
+			>> accounts[accountCount].balance)
+		{
+			accountCount++;
+		}
+		inFile.close();
+	}
+
+	// save all accounts and balances
+	auto saveAccounts = [&]()
+	{
+		ofstream outFile("accounts.txt");
+		for (int i = 0; i < accountCount; i++)
+		{
+			outFile << accounts[i].username << " " << accounts[i].password << " " << accounts[i].balance << endl;
+		}
+	};
+
+	// login and sign in
+	while (currentAccount == -1)
+	{
+		cout << "CASINO GAME\n" << endl;
+		cout << "1.login" << endl;
+		cout << "2.sign" << endl;
+		cout << "3.exit" << endl;
+		cout << "\nChoose an option: ";
+		cin >> choice;
+
+		if (choice == 3)
+		{
+			cout << "Goodbye!" << endl;
+			return 0;
+		}
+		else if (choice == 1)
+		{
+			cout << "\nUsername: ";
+			cin >> username;
+			cout << "Password: ";
+			cin >> password;
+
+			for (int i = 0; i < accountCount; i++)
+			{
+				if (accounts[i].username == username && accounts[i].password == password)
+				{
+					currentAccount = i;
+					break;
+				}
+			}
+
+			if (currentAccount != -1)
+			{
+				cout << "\nLogin successful!" << endl;
+				cout << "Welcome, " << accounts[currentAccount].username << "!" << endl;
+				cout << "Your balance: $" << accounts[currentAccount].balance << endl;
+			}
+			else
+			{
+				cout << "\nInvalid username or password." << endl;
+			}
+		}
+		else if (choice == 2)
+		{
+			if (accountCount >= MAX_ACCOUNTS)
+			{
+				cout << "\nThe maximum of 5 accounts has been reached." << endl;
+				continue;
+			}
+
+			cout << "\nCreate username: ";
+			cin >> username;
+			bool usernameExists = false;
+			for (int i = 0; i < accountCount; i++)
+			{
+				if (accounts[i].username == username)
+				{
+					usernameExists = true;
+					break;
+				}
+			}
+			if (usernameExists)
+			{
+				cout << "Username already exists." << endl;
+				continue;
+			}
+
+			cout << "Create password: ";
+			cin >> password;
+
+			accounts[accountCount].username = username;
+			accounts[accountCount].password = password;
+			accounts[accountCount].balance = 1000;
+			currentAccount = accountCount;
+			accountCount++;
+			saveAccounts();
+
+			cout << "\nAccount created successfully!" << endl;
+			cout << "Welcome, " << username << "!" << endl;
+			cout << "Starting balance: $1000" << endl; //  new account starts with a balance of $1000
+		}
+		else
+		{
+			cout << "\nInvalid choice. Please enter login, sign, or exit." << endl;
+		}
+	}
+
+	// synchronize the current account balance to the balance
+	balance = accounts[currentAccount].balance;
+
+	// create game instances
 	while (playing)
 	{
 		cout << "Casino game selection: " << endl;
@@ -844,28 +983,47 @@ int main()
 		cout << "3. Roulette" << endl;
 		cout << "4. Horse Race" << endl;
 		cout << "5. Exit" << endl;
+		int choice;
 		cin >> choice;
+
+		if (cin.fail())
+		{
+			cin.clear();
+			cin.ignore(numeric_limits<streamsize>::max(), '\n');
+			cout << "Invalid selection. Please enter a number." << endl;
+			continue;
+		}
+
+		if (balance <= 0)
+		{
+			cout << "\nYou do not have enough balance to play. Game over!" << endl;
+			accounts[currentAccount].balance = balance;
+			saveAccounts();
+			break;
+		}
+
+		Game* game = nullptr;
 
 		switch (choice)
 		{
 		case 1:
 			game = new Blackjack();
-			(*game).play();
 			break;
 		case 2:
 			game = new Slots();
-			(*game).play();
 			break;
 		case 3:
 			game = new Roulette();
-			(*game).play();
 			break;
 		case 4:
 			game = new HorseRace();
-			(*game).play();
 			break;
 		case 5:
-			cout << "Exiting..." << endl;
+			accounts[currentAccount].balance = balance; //Save the latest balance of the current account
+			saveAccounts();
+
+			cout << "\nThank you for playing!" << endl;
+			cout << "Final balance: $" << accounts[currentAccount].balance << endl;
 			playing = false;
 			break;
 		default:
@@ -876,10 +1034,15 @@ int main()
 		// Cleans up allocated memory after every loop iteration
 		if (game != nullptr)
 		{
+			game->play(accounts[currentAccount]);
+
 			delete game;
 			game = nullptr;
+
+			accounts[currentAccount].balance = balance;
+			saveAccounts();
 		}
 	}
-	delete game;
+	
 	return 0;
 }
