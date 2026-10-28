@@ -7,6 +7,7 @@ using namespace std;
 #include <climits> // added to fix INT_MAX
 #include <vector> // added for roullette game to store pocket numbers. -Zane
 #include <algorithm> // added for find() function in roulette game. - Zane
+#include "raylib.h" // yall will need to install raylib to compile this - Dom
 
 int balance = 0;
 bool playing = true;
@@ -772,8 +773,124 @@ int main()
 	cout << "Free balance given: 1000" << endl;
 	addBalance(1000);
 
+	// read saved accounts from file
+	ifstream inFile("accounts.txt");
+	if (inFile)
+	{
+		while (accountCount < MAX_ACCOUNTS &&
+			inFile >> accounts[accountCount].username
+			>> accounts[accountCount].password
+			>> accounts[accountCount].balance)
+		{
+			accountCount++;
+		}
+		inFile.close();
+	}
+
+	// save all accounts and balances
+	auto saveAccounts = [&]()
+	{
+		ofstream outFile("accounts.txt");
+		for (int i = 0; i < accountCount; i++)
+		{
+			outFile << accounts[i].username << " " << accounts[i].password << " " << accounts[i].balance << endl;
+		}
+	};
+
+	// login and sign in
+	while (currentAccount == -1)
+	{
+		cout << "CASINO GAME\n" << endl;
+		cout << "1. Login" << endl;
+		cout << "2. Create Account" << endl;
+		cout << "3. Exit" << endl;
+		cout << "\nChoose an option: ";
+		cin >> choice;
+
+		if (choice == 3)
+		{
+			cout << "Goodbye!" << endl;
+			return 0;
+		}
+		else if (choice == 1)
+		{
+			cout << "\nUsername: ";
+			cin >> username;
+			cout << "Password: ";
+			cin >> password;
+
+			for (int i = 0; i < accountCount; i++)
+			{
+				if (accounts[i].username == username && accounts[i].password == password)
+				{
+					currentAccount = i;
+					break;
+				}
+			}
+
+			if (currentAccount != -1)
+			{
+				cout << "\nLogin successful!" << endl;
+				cout << "Welcome, " << accounts[currentAccount].username << "!" << endl;
+				cout << "Your balance: $" << accounts[currentAccount].balance << endl;
+			}
+			else
+			{
+				cout << "\nInvalid username or password." << endl;
+			}
+		}
+		else if (choice == 2)
+		{
+			if (accountCount >= MAX_ACCOUNTS)
+			{
+				cout << "\nThe maximum of 5 accounts has been reached." << endl;
+				continue;
+			}
+
+			cout << "\nCreate username: ";
+			cin >> username;
+			bool usernameExists = false;
+			for (int i = 0; i < accountCount; i++)
+			{
+				if (accounts[i].username == username)
+				{
+					usernameExists = true;
+					break;
+				}
+			}
+			if (usernameExists)
+			{
+				cout << "Username already exists." << endl;
+				continue;
+			}
+
+			cout << "Create password: ";
+			cin >> password;
+
+			accounts[accountCount].username = username;
+			accounts[accountCount].password = password;
+			accounts[accountCount].balance = 1000;
+			currentAccount = accountCount;
+			accountCount++;
+			saveAccounts();
+
+			cout << "\nAccount created successfully!" << endl;
+			cout << "Welcome, " << username << "!" << endl;
+			cout << "Starting balance: $1000" << endl; //  new account starts with a balance of $1000
+		}
+		else
+		{
+			cout << "\nInvalid choice. Please enter login, sign, or exit." << endl;
+		}
+	}
+
+	// synchronize the current account balance to the balance
+	balance = accounts[currentAccount].balance;
+	// create game instances
 	while (playing)
 	{
+		Game* game = nullptr;
+		/*
 		cout << "Casino game selection: " << endl;
 		cout << "1. Blackjack" << endl;
 		cout << "2. Slots" << endl;
@@ -781,6 +898,23 @@ int main()
 		cout << "4. Horse Race" << endl;
 		cout << "5. Exit" << endl;
 		cin >> choice;
+
+		if (cin.fail())
+		{
+			cin.clear();
+			cin.ignore(numeric_limits<streamsize>::max(), '\n');
+			cout << "Invalid selection. Please enter a number." << endl;
+			continue;
+		}
+
+		if (balance <= 0)
+		{
+			cout << "\nYou do not have enough balance to play. Game over!" << endl;
+			accounts[currentAccount].balance = balance;
+			saveAccounts();
+			break;
+		}
+
 
 		switch (choice)
 		{
@@ -807,6 +941,38 @@ int main()
 		default:
 			cout << "Invalid selection." << endl;
 			break;
+		}*/
+		
+		const float BASE_WIDTH = 1920.0f;
+		const float BASE_HEIGHT = 1080.0f;
+		SetConfigFlags(FLAG_WINDOW_RESIZABLE); // allows window to be resized - Dom
+		InitWindow(BASE_WIDTH, BASE_HEIGHT, "CasinoGame"); // initializes window with base width and height resolution - Dom
+		SetTargetFPS(60);
+
+		Texture2D background = LoadTexture("assets/background.png"); // gets background image from assets folder and loads it in memory - Dom
+
+		RenderTexture2D canvas = LoadRenderTexture(BASE_WIDTH, BASE_HEIGHT); // creates a render texture to scale to and render our window within - Dom
+
+		// this block renders all our textures and text - Dom
+		while (!WindowShouldClose())
+		{
+			BeginTextureMode(canvas); // sets the render texture as the target for drawing - Dom
+			DrawTexture(background, 0, 0, WHITE);
+			DrawText("Casino Game", 800, 100, 50, WHITE);
+			EndTextureMode();
+
+			float scale = min(GetScreenWidth() / BASE_WIDTH, GetScreenHeight() / BASE_HEIGHT); // determining scale for render window - Dom
+			float offsetX = (GetScreenWidth() - BASE_WIDTH * scale) * 0.05f; // determining offset for render window - Dom
+			float offsetY = (GetScreenHeight() - BASE_HEIGHT * scale) * 0.05f; // determining offset for render window - Dom
+
+			Rectangle sourceRec = { 0.0f, 0.0f, BASE_WIDTH, -BASE_HEIGHT }; // source rectangle for render texture - Dom
+			Rectangle destRec = { offsetX, offsetY, BASE_WIDTH * scale, BASE_HEIGHT * scale }; // destination rectangle for render texture - Dom
+
+			BeginDrawing();
+			ClearBackground(BLACK);
+			DrawTexturePro(canvas.texture, sourceRec, destRec, { 0, 0 }, 0.0f, WHITE); // draws the scaled and offset canvas to the window - Dom
+			EndDrawing();
+
 		}
 
 		// Cleans up allocated memory after every loop iteration
@@ -815,6 +981,10 @@ int main()
 			delete game;
 			game = nullptr;
 		}
+		
+		UnloadRenderTexture(canvas);
+		UnloadTexture(background);
+		CloseWindow();
 	}
 	delete game;
 	return 0;
