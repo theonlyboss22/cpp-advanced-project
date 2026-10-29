@@ -9,6 +9,16 @@ using namespace std;
 #include <algorithm> // added for find() function in roulette game. - Zane
 #include "raylib.h" // yall will need to install raylib to compile this - Dom
 
+
+const int MAX_ACCOUNTS = 5;
+
+struct Account // Account Information
+{
+	string username;
+	string password;
+	int balance;
+};
+
 int balance = 0;
 bool playing = true;
 
@@ -20,6 +30,7 @@ void addBalance(int newBalance)
 class Game
 {
 private:
+	string name;
 	int betAmount = 0;
 	bool inputValid = false;
 public:
@@ -48,6 +59,15 @@ public:
 			cin.clear();
 		} while (inputValid == false);
 		return betAmount;
+	}
+
+	void setName(string gameName)
+	{
+		name = gameName;
+	}
+	string getName()
+	{
+		return name;
 	}
 };
 
@@ -136,6 +156,14 @@ private:
 public:
 	void play() override
 	{
+		setName("Blackjack");
+
+		Texture2D background = LoadTexture("assets/background.png"); // gets background image from assets folder and loads it in memory - Dom
+		DrawTexture(background, 0, 0, WHITE);
+		DrawText(getName().c_str(), 800, 100, 50, WHITE);
+		DrawText(("Balance: $" + to_string(balance)).c_str(), 800, 200, 30, WHITE);
+
+		/*
 		default_random_engine generator(random_device{}());
 
 		int hand[11];
@@ -212,8 +240,10 @@ public:
 			default: // Added default didn't know if this was necessary but I added it just in case -Zane
 				cout << "Invalid action. Try again.\n";
 				break;
+				
 			}
 		}
+		*/
 	}
 };
 
@@ -222,7 +252,7 @@ class Slots : public Game
 public:
 	void play() override
 	{
-
+		setName("Slots");
 		bool keepPlaying = true;
 		while (keepPlaying)
 		{
@@ -302,6 +332,7 @@ private:
 public:
 	void play() override
 	{
+		setName("Roulette");
 		bool keepPlaying = true;
 		while (keepPlaying)
 		{
@@ -703,6 +734,7 @@ public:
 	void play() override
 	{
 		// Horse Race game logic here
+		setName("Horse Race");
 		while (true) {
 			if (balance <= 0) {
 				cout << "You do not have enough balance to play." << endl;
@@ -767,11 +799,14 @@ public:
 
 int main()
 {
-	// create game instances
-	Game* game = nullptr;
-	int choice = 0;
-	cout << "Free balance given: 1000" << endl;
-	addBalance(1000);
+	bool blackjackPlaying = false;
+	// ACCOUNT SYSTEM
+	Account accounts[MAX_ACCOUNTS];
+	int accountCount = 0;
+	int currentAccount = -1;
+	int choice;
+	string username;
+	string password;
 
 	// read saved accounts from file
 	ifstream inFile("accounts.txt");
@@ -887,10 +922,9 @@ int main()
 	// synchronize the current account balance to the balance
 	balance = accounts[currentAccount].balance;
 	// create game instances
-	while (playing)
+	/*while (playing)
 	{
 		Game* game = nullptr;
-		/*
 		cout << "Casino game selection: " << endl;
 		cout << "1. Blackjack" << endl;
 		cout << "2. Slots" << endl;
@@ -941,38 +975,6 @@ int main()
 		default:
 			cout << "Invalid selection." << endl;
 			break;
-		}*/
-		
-		const float BASE_WIDTH = 1920.0f;
-		const float BASE_HEIGHT = 1080.0f;
-		SetConfigFlags(FLAG_WINDOW_RESIZABLE); // allows window to be resized - Dom
-		InitWindow(BASE_WIDTH, BASE_HEIGHT, "CasinoGame"); // initializes window with base width and height resolution - Dom
-		SetTargetFPS(60);
-
-		Texture2D background = LoadTexture("assets/background.png"); // gets background image from assets folder and loads it in memory - Dom
-
-		RenderTexture2D canvas = LoadRenderTexture(BASE_WIDTH, BASE_HEIGHT); // creates a render texture to scale to and render our window within - Dom
-
-		// this block renders all our textures and text - Dom
-		while (!WindowShouldClose())
-		{
-			BeginTextureMode(canvas); // sets the render texture as the target for drawing - Dom
-			DrawTexture(background, 0, 0, WHITE);
-			DrawText("Casino Game", 800, 100, 50, WHITE);
-			EndTextureMode();
-
-			float scale = min(GetScreenWidth() / BASE_WIDTH, GetScreenHeight() / BASE_HEIGHT); // determining scale for render window - Dom
-			float offsetX = (GetScreenWidth() - BASE_WIDTH * scale) * 0.05f; // determining offset for render window - Dom
-			float offsetY = (GetScreenHeight() - BASE_HEIGHT * scale) * 0.05f; // determining offset for render window - Dom
-
-			Rectangle sourceRec = { 0.0f, 0.0f, BASE_WIDTH, -BASE_HEIGHT }; // source rectangle for render texture - Dom
-			Rectangle destRec = { offsetX, offsetY, BASE_WIDTH * scale, BASE_HEIGHT * scale }; // destination rectangle for render texture - Dom
-
-			BeginDrawing();
-			ClearBackground(BLACK);
-			DrawTexturePro(canvas.texture, sourceRec, destRec, { 0, 0 }, 0.0f, WHITE); // draws the scaled and offset canvas to the window - Dom
-			EndDrawing();
-
 		}
 
 		// Cleans up allocated memory after every loop iteration
@@ -981,11 +983,61 @@ int main()
 			delete game;
 			game = nullptr;
 		}
-		
-		UnloadRenderTexture(canvas);
-		UnloadTexture(background);
-		CloseWindow();
+	}*/
+
+	Vector2 basicButtonScaleXY = { 50, 50 };
+	const float BASE_WIDTH = 1920.0f;
+	const float BASE_HEIGHT = 1080.0f;
+	SetConfigFlags(FLAG_WINDOW_RESIZABLE); // allows window to be resized - Dom
+	InitWindow(BASE_WIDTH, BASE_HEIGHT, "CasinoGame"); // initializes window with base width and height resolution - Dom
+	SetTargetFPS(60);
+
+	Texture2D background = LoadTexture("assets/background.png"); // gets background image from assets folder and loads it in memory - Dom
+
+	RenderTexture2D canvas = LoadRenderTexture(BASE_WIDTH, BASE_HEIGHT); // creates a render texture to scale to and render our window within - Dom
+
+	Rectangle blackjackButton = { 100, 200, basicButtonScaleXY.x, basicButtonScaleXY.y }; // button to play blackjack (x, y, width, height) - Dom
+
+	// this block renders all our textures and text - Dom
+	while (!WindowShouldClose())
+	{
+		Game* game = nullptr;
+		Vector2 mousePosition = GetMousePosition(); // gets mouse position - Dom
+		BeginTextureMode(canvas); // sets the render texture as the target for drawing - Dom
+		DrawTexture(background, 0, 0, WHITE);
+		DrawText("Casino Game", 800, 100, 50, WHITE);
+		DrawText(("Balance: $" + to_string(balance)).c_str(), 800, 200, 30, WHITE);
+		DrawRectangleRec(blackjackButton, BLACK); // draws the button to play blackjack - Dom
+		DrawText("Blackjack", blackjackButton.x + blackjackButton.width + 25, (blackjackButton.y + (blackjackButton.height / 3)), 30, WHITE);
+		if (CheckCollisionPointRec(mousePosition, blackjackButton) && IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+		{
+			DrawRectangleRec(blackjackButton, RED); // changes button color to red when clicked - Dom
+			game = new Blackjack();
+			(*game).play();
+		}
+		if (CheckCollisionPointRec(mousePosition, blackjackButton) && IsMouseButtonUp(MOUSE_BUTTON_LEFT))
+		{
+			DrawRectangleRec(blackjackButton, DARKGRAY);
+			DrawText(("Balance: $" + to_string(balance)).c_str(), 800, 200, 30, WHITE);
+		}
+		EndTextureMode();
+
+		float scale = min(GetScreenWidth() / BASE_WIDTH, GetScreenHeight() / BASE_HEIGHT); // determining scale for render window - Dom
+		float offsetX = (GetScreenWidth() - BASE_WIDTH * scale) * 0.5f; // determining offset for render window - Dom
+		float offsetY = (GetScreenHeight() - BASE_HEIGHT * scale) * 0.5f; // determining offset for render window - Dom
+
+		Rectangle sourceRec = { 0.0f, 0.0f, BASE_WIDTH, -BASE_HEIGHT }; // source rectangle for render texture - Dom
+		Rectangle destRec = { offsetX, offsetY, BASE_WIDTH * scale, BASE_HEIGHT * scale }; // destination rectangle for render texture - Dom
+
+
+		BeginDrawing();
+		ClearBackground(BLACK);
+		DrawTexturePro(canvas.texture, sourceRec, destRec, { 0, 0 }, 0.0f, WHITE); // draws the scaled and offset canvas to the window - Dom
+		EndDrawing();
 	}
-	delete game;
+
+	UnloadRenderTexture(canvas);
+	UnloadTexture(background);
+	CloseWindow();
 	return 0;
 }
