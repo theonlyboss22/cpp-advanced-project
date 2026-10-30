@@ -12,6 +12,23 @@ using namespace std;
 
 
 const int MAX_ACCOUNTS = 5;
+const float BASE_WIDTH = 1920.0f;
+const float BASE_HEIGHT = 1080.0f;
+
+Vector2 mousePosition;
+float scale;
+float offsetX;
+float offsetY;
+
+//handles scaling of any vec2 - Dom
+auto scale_transform_vec2 = [&](Vector2 orig) -> Vector2 {
+	return Vector2{ (orig.x * scale) + offsetX, (orig.y * scale) + offsetY };
+	};
+
+//handles scaling of any rectangle - Dom
+auto scale_transform_rect = [&](Rectangle orig) -> Rectangle {
+	return Rectangle{ (orig.x * scale) + offsetX,(orig.y * scale) + offsetY,(orig.width * scale), (orig.height * scale), };
+	};
 
 struct Account // Account Information
 {
@@ -33,33 +50,54 @@ class Game
 private:
 	string name;
 	int betAmount = 0;
-	bool inputValid = false;
+	bool betLocked = false;
 public:
 	int bet = 0;
 	virtual void play() = 0;
 	int getBet()
 	{
-		do
-		{
-			cout << "Enter your bet amount: \n";
-			cin.ignore(INT_MAX, '\n'); // INT_MAX wasn't working because climit library wasn't included
-			cin >> betAmount;
-			if ((betAmount > balance || betAmount <= 0 || cin.fail()))
-			{
-				cout << "Insufficient balance / invalid input. \nTry again: \n";
-				inputValid = false;
-			}
-			else if (betAmount <= balance)
-			{
-				cout << "\nBalance Remaining: " << balance - betAmount << "\n" << endl;
+		Rectangle betLockButton = { 800, 600, 150, 50 };
+		Rectangle betIncreaseButton = { 800 + ((strlen(to_string(betAmount).c_str()) * 20)), 500, 25, 25 };
+		Rectangle betDecreaseButton = { 800 - 25, 500, 25, 25 };
+		bool betIncreaseButtonPressed = CheckCollisionPointRec(mousePosition, scale_transform_rect(betIncreaseButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+		bool betIncreaseButtonUp = CheckCollisionPointRec(mousePosition, scale_transform_rect(betIncreaseButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT);
+		bool betLockButtonPressed = CheckCollisionPointRec(mousePosition, scale_transform_rect(betLockButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+		bool betLockButtonUp = CheckCollisionPointRec(mousePosition, scale_transform_rect(betLockButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT);
+		bool betDecreaseButtonPressed = CheckCollisionPointRec(mousePosition, scale_transform_rect(betDecreaseButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+		bool betDecreaseButtonUp = CheckCollisionPointRec(mousePosition, scale_transform_rect(betDecreaseButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT);
 
-				inputValid = true;
-			}
-			else
-				cout << "Unexpected error. \nTry again: \n";
-			cin.clear();
-		} while (inputValid == false);
-		return betAmount;
+		DrawText("Select your bet amount:", 800, 300, 30, WHITE);
+		DrawText(to_string(betAmount).c_str(), 800, 500, 30, WHITE);
+		DrawText("+", 800 + ((strlen(to_string(betAmount).c_str()) * 20)), 500, 30, WHITE);
+		DrawText("-", 800 - 25, 500, 30, WHITE);
+		DrawText("Lock in bet", 800, 600, 30, WHITE);
+
+		if (betIncreaseButtonPressed && betAmount < balance)
+		{
+			betAmount++;
+		}
+		if (betIncreaseButtonUp)
+		{
+			DrawText("+", 800 + ((strlen(to_string(betAmount).c_str()) * 20)), 500, 30, DARKGRAY);
+		}
+		if (betLockButtonPressed && betAmount > 0)
+		{
+			betLocked = true;
+		}
+		if (betLockButtonUp)
+		{
+			DrawText("Lock in bet", 800, 600, 30, DARKGRAY);
+		}
+		if (betDecreaseButtonPressed && betAmount > 0)
+		{
+			betAmount--;
+		}
+		if (betDecreaseButtonUp)
+		{
+			DrawText("-", 800 - 25, 500, 30, DARKGRAY);
+		}
+
+		return betLocked ? betAmount : 0;
 	}
 
 	void setName(string gameName)
@@ -69,6 +107,10 @@ public:
 	string getName()
 	{
 		return name;
+	}
+	bool isBetLocked() const
+	{
+		return betLocked;
 	}
 };
 
@@ -84,6 +126,7 @@ private:
 	};
 
 	map<string, Texture2D> cardTextures = { {"2", LoadTexture("assets/Deck Assets/2s.png")}, { "3", LoadTexture("assets/Deck Assets/3s.png")}, { "4", LoadTexture("assets/Deck Assets/4s.png")}, { "5", LoadTexture("assets/Deck Assets/5s.png")}, { "6", LoadTexture("assets/Deck Assets/6s.png")}, { "7", LoadTexture("assets/Deck Assets/7s.png")}, { "8", LoadTexture("assets/Deck Assets/8s.png")}, { "9", LoadTexture("assets/Deck Assets/9s.png")}, { "10", LoadTexture("assets/Deck Assets/Ts.png")}, { "Jack", LoadTexture("assets/Deck Assets/Js.png")}, { "Queen", LoadTexture("assets/Deck Assets/Qs.png")}, { "King", LoadTexture("assets/Deck Assets/Ks.png")}, { "Ace", LoadTexture("assets/Deck Assets/As.png")} };
+	Texture2D blackjackBackground = LoadTexture("assets/background.png");
 
 	// Passes gen by ref using 'auto&' or 'default_random_engine&'
 	void drawCard(int hand[], int& count, card cards[], default_random_engine& generator, uniform_int_distribution<int>& distribution)
@@ -161,29 +204,39 @@ private:
 public:
 	void play() override
 	{
-		setName("Blackjack");
 
-		Texture2D background = LoadTexture("assets/background.png"); // gets background image from assets folder and loads it in memory - Dom
-		DrawTexture(background, 0, 0, WHITE);
-		DrawText(getName().c_str(), 800, 100, 50, WHITE);
-		DrawText(("Balance: $" + to_string(balance)).c_str(), 800, 200, 30, WHITE);
-
-		/*
 		default_random_engine generator(random_device{}());
 
 		int hand[11];
 		int count = 0;
 		int currentHandValue = 0;
-		int selectedAction = 0;
 		bool playerTurn = true;
+
+		setName("Blackjack");
+
+		DrawTexture(blackjackBackground, 0, 0, WHITE);
+		DrawText(getName().c_str(), 800, 100, 50, WHITE);
+		DrawText(("Balance: $" + to_string(balance)).c_str(), 800, 200, 30, WHITE);
 
 		card cards[] = { {"2", 2, 4}, {"3", 3, 4}, {"4", 4, 4}, {"5", 5, 4}, {"6", 6, 4}, {"7", 7, 4}, {"8", 8, 4}, {"9", 9, 4}, {"10", 10, 4}, {"Jack", 10, 4}, {"Queen", 10, 4}, {"King", 10, 4}, {"Ace", 11, 4} };
 		uniform_int_distribution<int> distribution(0, (sizeof(cards) / sizeof(cards[0])) - 1); // changed index so it works
 		int randomNumber = distribution(generator);
 
+		if (!isBetLocked())
+		{
+			bet = getBet();
+			if (bet == 0)
+			{
+				return;
+			}
+		}
+
+		/*
+		int selectedAction = 0;
+
+
 		cout << "Blackjack selected. \n";
 
-		bet = getBet();
 
 		drawCard(hand, count, cards, generator, distribution); // changed to drawHand to drawCard so at start 2 cards are drawn. -Zane
 		drawCard(hand, count, cards, generator, distribution);
@@ -549,7 +602,7 @@ public:
 class HorseRace : public Game
 {
 private:
-	void playRace(int balance, int horseCount, double finishValue) 
+	void playRace(int balance, int horseCount, double finishValue)
 	{
 
 		while (true)
@@ -764,7 +817,7 @@ public:
 		DrawText(getName().c_str(), 800, 100, 50, WHITE);
 		DrawText(("Balance: $" + to_string(balance)).c_str(), 800, 200, 30, WHITE);
 
-		/*while (true) 
+		/*while (true)
 		{
 			if (balance <= 0) {
 				cout << "You do not have enough balance to play." << endl;
@@ -963,8 +1016,6 @@ int main()
 	bool exitButtonDown = false;
 	bool exitButtonUp = false;
 	Vector2 basicButtonScaleXY = { 50, 50 };
-	const float BASE_WIDTH = 1920.0f;
-	const float BASE_HEIGHT = 1080.0f;
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE); // allows window to be resized - Dom
 	InitWindow(BASE_WIDTH, BASE_HEIGHT, "CasinoGame"); // initializes window with base width and height resolution - Dom
 	SetTargetFPS(60);
@@ -979,12 +1030,15 @@ int main()
 	Rectangle rouletteButton = { 100, 400, basicButtonScaleXY.x, basicButtonScaleXY.y }; // button to play roulette (x, y, width, height) - Dom
 	Rectangle horseRaceButton = { 100, 500, basicButtonScaleXY.x, basicButtonScaleXY.y }; // button to play horse race (x, y, width, height) - Dom
 	Rectangle exitButton = { 100, 600, basicButtonScaleXY.x, basicButtonScaleXY.y }; // button to exit game (x, y, width, height) - Dom
+	Game* game = nullptr;
 
 	// this block renders all our textures and text - Dom
 	while (!WindowShouldClose())
 	{
-		Game* game = nullptr;
-		Vector2 mousePosition = GetMousePosition(); // gets mouse position - Dom
+		mousePosition = GetMousePosition(); // gets mouse position - Dom
+		scale = min(GetScreenWidth() / BASE_WIDTH, GetScreenHeight() / BASE_HEIGHT); // determining scale for render window - Dom
+		offsetX = (GetScreenWidth() - BASE_WIDTH * scale) * 0.5f; // determining offset for render window - Dom
+		offsetY = (GetScreenHeight() - BASE_HEIGHT * scale) * 0.5f; // determining offset for render window - Dom
 		BeginTextureMode(canvas); // sets the render texture as the target for drawing - Dom
 		DrawTexture(background, 0, 0, WHITE);
 		DrawText("Casino Game", 800, 100, 50, WHITE);
@@ -1001,8 +1055,10 @@ int main()
 		DrawText("Exit", exitButton.x + exitButton.width + 25, (exitButton.y + (exitButton.height / 3)), 30, WHITE);
 		if (bjButtonDown)
 		{
-			game = new Blackjack();
-			(*game).play();
+			if (game == nullptr)
+			{
+				game = new Blackjack();
+			}
 		}
 		if (bjButtonUp)
 		{
@@ -1010,8 +1066,10 @@ int main()
 		}
 		if (slotsButtonDown)
 		{
-			game = new Slots();
-			(*game).play();
+			if (game == nullptr)
+			{
+				game = new Slots();
+			}
 		}
 		if (slotsButtonUp)
 		{
@@ -1019,8 +1077,10 @@ int main()
 		}
 		if (rouletteButtonDown)
 		{
-			game = new Roulette();
-			(*game).play();
+			if (game == nullptr)
+			{
+				game = new Roulette();
+			}
 		}
 		if (rouletteButtonUp)
 		{
@@ -1028,8 +1088,10 @@ int main()
 		}
 		if (horseRaceButtonDown)
 		{
-			game = new HorseRace();
-			(*game).play();
+			if (game == nullptr)
+			{
+				game = new HorseRace();
+			}
 		}
 		if (horseRaceButtonUp)
 		{
@@ -1043,6 +1105,10 @@ int main()
 		{
 			DrawRectangleRec(exitButton, DARKGRAY);
 		}
+		if (game != nullptr)
+		{
+			game->play();
+		}
 		if (balance <= 0)
 		{
 			DrawTexture(gameOverScreen, 0, 0, WHITE);
@@ -1051,34 +1117,24 @@ int main()
 			break;
 		}
 		EndTextureMode();
+
 		bjButtonDown = false;
 		bjButtonUp = false;
-		exitButtonUp = false;
+		slotsButtonDown = false;
+		slotsButtonUp = false;
+		rouletteButtonDown = false;
+		rouletteButtonUp = false;
+		horseRaceButtonDown = false;
+		horseRaceButtonUp = false;
 		exitButtonDown = false;
-
-		float scale = min(GetScreenWidth() / BASE_WIDTH, GetScreenHeight() / BASE_HEIGHT); // determining scale for render window - Dom
-		float offsetX = (GetScreenWidth() - BASE_WIDTH * scale) * 0.5f; // determining offset for render window - Dom
-		float offsetY = (GetScreenHeight() - BASE_HEIGHT * scale) * 0.5f; // determining offset for render window - Dom
+		exitButtonUp = false;
 
 		Rectangle sourceRec = { 0.0f, 0.0f, BASE_WIDTH, -BASE_HEIGHT }; // source rectangle for render texture - Dom
 		Rectangle destRec = { offsetX, offsetY, BASE_WIDTH * scale, BASE_HEIGHT * scale }; // destination rectangle for render texture - Dom
 
-		auto scale_transform_vec2 = [&](Vector2 orig) -> Vector2 {
-			return Vector2{(orig.x * scale) + offsetX, (orig.y * scale) + offsetY};
-		};
 
-		auto scale_transform_rect = [&](Rectangle orig) -> Rectangle {
-			return Rectangle{
-				(orig.x * scale) + offsetX, 
-				(orig.y * scale) + offsetY, 
-				(orig.width * scale), 
-				(orig.height * scale), 
-			};
-		};
 
-		BeginDrawing();
-		ClearBackground(BLACK);
-		DrawTexturePro(canvas.texture, sourceRec, destRec, { 0, 0 }, 0.0f, WHITE); // draws the scaled and offset canvas to the window - Dom
+		//all of these are getting the mouse position and checking if the mouse is over the button and if the mouse button is down or up - Dom
 		bjButtonDown = (CheckCollisionPointRec(mousePosition, scale_transform_rect(blackjackButton)) && IsMouseButtonDown(MOUSE_BUTTON_LEFT));
 		bjButtonUp = (CheckCollisionPointRec(mousePosition, scale_transform_rect(blackjackButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT));
 		slotsButtonDown = (CheckCollisionPointRec(mousePosition, scale_transform_rect(slotsButton)) && IsMouseButtonDown(MOUSE_BUTTON_LEFT));
@@ -1089,16 +1145,18 @@ int main()
 		horseRaceButtonUp = (CheckCollisionPointRec(mousePosition, scale_transform_rect(horseRaceButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT));
 		exitButtonDown = (CheckCollisionPointRec(mousePosition, scale_transform_rect(exitButton)) && IsMouseButtonDown(MOUSE_BUTTON_LEFT));
 		exitButtonUp = (CheckCollisionPointRec(mousePosition, scale_transform_rect(exitButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT));
+
+
+		//draws the scaled canvas with all elements drawn within it to the window - Dom
+		BeginDrawing();
+		ClearBackground(BLACK);
+		DrawTexturePro(canvas.texture, sourceRec, destRec, { 0, 0 }, 0.0f, WHITE); // draws the scaled and offset canvas to the window - Dom
 		EndDrawing();
-		if (game != nullptr)
-		{
-			delete game;
-			game = nullptr;
-		}
 	}
 
 	UnloadRenderTexture(canvas);
 	UnloadTexture(background);
+	delete game;
 	CloseWindow();
 	return 0;
 }
