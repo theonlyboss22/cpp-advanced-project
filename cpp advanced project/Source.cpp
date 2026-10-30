@@ -249,6 +249,10 @@ public:
 			}
 		}
 		*/
+		for (auto& element : cardTextures)
+		{
+			UnloadTexture(element.second);
+		}
 	}
 };
 
@@ -258,7 +262,13 @@ public:
 	void play() override
 	{
 		setName("Slots");
-		bool keepPlaying = true;
+
+		Texture2D background = LoadTexture("assets/background.png"); // gets background image from assets folder and loads it in memory - Dom
+		DrawTexture(background, 0, 0, WHITE);
+		DrawText(getName().c_str(), 800, 100, 50, WHITE);
+		DrawText(("Balance: $" + to_string(balance)).c_str(), 800, 200, 30, WHITE);
+
+		/*bool keepPlaying = true;
 		while (keepPlaying)
 		{
 			if (balance <= 0)
@@ -321,7 +331,7 @@ public:
 			{
 				keepPlaying = false;
 			}
-		}
+		}*/
 	}
 };
 
@@ -338,7 +348,13 @@ public:
 	void play() override
 	{
 		setName("Roulette");
-		bool keepPlaying = true;
+
+		Texture2D background = LoadTexture("assets/background.png"); // gets background image from assets folder and loads it in memory - Dom
+		DrawTexture(background, 0, 0, WHITE);
+		DrawText(getName().c_str(), 800, 100, 50, WHITE);
+		DrawText(("Balance: $" + to_string(balance)).c_str(), 800, 200, 30, WHITE);
+
+		/*bool keepPlaying = true;
 		while (keepPlaying)
 		{
 			if (balance <= 0)
@@ -467,7 +483,7 @@ public:
 			{
 				keepPlaying = false;
 			}
-		}
+		}*/
 	}
 };
 
@@ -533,8 +549,11 @@ public:
 class HorseRace : public Game
 {
 private:
-	void playRace(int balance, int horseCount, double finishValue) {
-		while (true) {
+	void playRace(int balance, int horseCount, double finishValue) 
+	{
+
+		while (true)
+		{
 
 			// Horse Number
 			Horse horse[10] = {
@@ -738,9 +757,15 @@ private:
 public:
 	void play() override
 	{
-		// Horse Race game logic here
 		setName("Horse Race");
-		while (true) {
+
+		Texture2D background = LoadTexture("assets/background.png"); // gets background image from assets folder and loads it in memory - Dom
+		DrawTexture(background, 0, 0, WHITE);
+		DrawText(getName().c_str(), 800, 100, 50, WHITE);
+		DrawText(("Balance: $" + to_string(balance)).c_str(), 800, 200, 30, WHITE);
+
+		/*while (true) 
+		{
 			if (balance <= 0) {
 				cout << "You do not have enough balance to play." << endl;
 				break;
@@ -798,7 +823,7 @@ public:
 				break;
 			}
 
-		}
+		}*/
 	}
 };
 
@@ -854,6 +879,7 @@ int main()
 		else if (choice == 1)
 		{
 			cout << "\nUsername: ";
+			cin.ignore(INT_MAX, '\n');
 			cin >> username;
 			cout << "Password: ";
 			cin >> password;
@@ -925,72 +951,17 @@ int main()
 
 	// synchronize the current account balance to the balance
 	balance = accounts[currentAccount].balance;
-	// create game instances
-	/*while (playing)
-	{
-		Game* game = nullptr;
-		cout << "Casino game selection: " << endl;
-		cout << "1. Blackjack" << endl;
-		cout << "2. Slots" << endl;
-		cout << "3. Roulette" << endl;
-		cout << "4. Horse Race" << endl;
-		cout << "5. Exit" << endl;
-		cin >> choice;
-
-		if (cin.fail())
-		{
-			cin.clear();
-			cin.ignore(numeric_limits<streamsize>::max(), '\n');
-			cout << "Invalid selection. Please enter a number." << endl;
-			continue;
-		}
-
-		if (balance <= 0)
-		{
-			cout << "\nYou do not have enough balance to play. Game over!" << endl;
-			accounts[currentAccount].balance = balance;
-			saveAccounts();
-			break;
-		}
-
-
-		switch (choice)
-		{
-		case 1:
-			game = new Blackjack();
-			(*game).play();
-			break;
-		case 2:
-			game = new Slots();
-			(*game).play();
-			break;
-		case 3:
-			game = new Roulette();
-			(*game).play();
-			break;
-		case 4:
-			game = new HorseRace();
-			(*game).play();
-			break;
-		case 5:
-			cout << "Exiting..." << endl;
-			playing = false;
-			break;
-		default:
-			cout << "Invalid selection." << endl;
-			break;
-		}
-
-		// Cleans up allocated memory after every loop iteration
-		if (game != nullptr)
-		{
-			delete game;
-			game = nullptr;
-		}
-	}*/
 
 	bool bjButtonDown = false;
 	bool bjButtonUp = false;
+	bool slotsButtonDown = false;
+	bool slotsButtonUp = false;
+	bool rouletteButtonDown = false;
+	bool rouletteButtonUp = false;
+	bool horseRaceButtonDown = false;
+	bool horseRaceButtonUp = false;
+	bool exitButtonDown = false;
+	bool exitButtonUp = false;
 	Vector2 basicButtonScaleXY = { 50, 50 };
 	const float BASE_WIDTH = 1920.0f;
 	const float BASE_HEIGHT = 1080.0f;
@@ -999,6 +970,7 @@ int main()
 	SetTargetFPS(60);
 
 	Texture2D background = LoadTexture("assets/background.png"); // gets background image from assets folder and loads it in memory - Dom
+	Texture2D gameOverScreen = LoadTexture("assets/gameOver.png"); // gets game over image from assets folder and loads it in memory - Dom
 
 	RenderTexture2D canvas = LoadRenderTexture(BASE_WIDTH, BASE_HEIGHT); // creates a render texture to scale to and render our window within - Dom
 
@@ -1029,7 +1001,6 @@ int main()
 		DrawText("Exit", exitButton.x + exitButton.width + 25, (exitButton.y + (exitButton.height / 3)), 30, WHITE);
 		if (bjButtonDown)
 		{
-			DrawRectangleRec(blackjackButton, RED); // changes button color to red when clicked - Dom
 			game = new Blackjack();
 			(*game).play();
 		}
@@ -1037,9 +1008,53 @@ int main()
 		{
 			DrawRectangleRec(blackjackButton, DARKGRAY);
 		}
+		if (slotsButtonDown)
+		{
+			game = new Slots();
+			(*game).play();
+		}
+		if (slotsButtonUp)
+		{
+			DrawRectangleRec(slotsButton, DARKGRAY);
+		}
+		if (rouletteButtonDown)
+		{
+			game = new Roulette();
+			(*game).play();
+		}
+		if (rouletteButtonUp)
+		{
+			DrawRectangleRec(rouletteButton, DARKGRAY);
+		}
+		if (horseRaceButtonDown)
+		{
+			game = new HorseRace();
+			(*game).play();
+		}
+		if (horseRaceButtonUp)
+		{
+			DrawRectangleRec(horseRaceButton, DARKGRAY);
+		}
+		if (exitButtonDown)
+		{
+			break;
+		}
+		if (exitButtonUp)
+		{
+			DrawRectangleRec(exitButton, DARKGRAY);
+		}
+		if (balance <= 0)
+		{
+			DrawTexture(gameOverScreen, 0, 0, WHITE);
+			accounts[currentAccount].balance = balance;
+			saveAccounts();
+			break;
+		}
+		EndTextureMode();
 		bjButtonDown = false;
 		bjButtonUp = false;
-		EndTextureMode();
+		exitButtonUp = false;
+		exitButtonDown = false;
 
 		float scale = min(GetScreenWidth() / BASE_WIDTH, GetScreenHeight() / BASE_HEIGHT); // determining scale for render window - Dom
 		float offsetX = (GetScreenWidth() - BASE_WIDTH * scale) * 0.5f; // determining offset for render window - Dom
@@ -1066,7 +1081,20 @@ int main()
 		DrawTexturePro(canvas.texture, sourceRec, destRec, { 0, 0 }, 0.0f, WHITE); // draws the scaled and offset canvas to the window - Dom
 		bjButtonDown = (CheckCollisionPointRec(mousePosition, scale_transform_rect(blackjackButton)) && IsMouseButtonDown(MOUSE_BUTTON_LEFT));
 		bjButtonUp = (CheckCollisionPointRec(mousePosition, scale_transform_rect(blackjackButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT));
+		slotsButtonDown = (CheckCollisionPointRec(mousePosition, scale_transform_rect(slotsButton)) && IsMouseButtonDown(MOUSE_BUTTON_LEFT));
+		slotsButtonUp = (CheckCollisionPointRec(mousePosition, scale_transform_rect(slotsButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT));
+		rouletteButtonDown = (CheckCollisionPointRec(mousePosition, scale_transform_rect(rouletteButton)) && IsMouseButtonDown(MOUSE_BUTTON_LEFT));
+		rouletteButtonUp = (CheckCollisionPointRec(mousePosition, scale_transform_rect(rouletteButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT));
+		horseRaceButtonDown = (CheckCollisionPointRec(mousePosition, scale_transform_rect(horseRaceButton)) && IsMouseButtonDown(MOUSE_BUTTON_LEFT));
+		horseRaceButtonUp = (CheckCollisionPointRec(mousePosition, scale_transform_rect(horseRaceButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT));
+		exitButtonDown = (CheckCollisionPointRec(mousePosition, scale_transform_rect(exitButton)) && IsMouseButtonDown(MOUSE_BUTTON_LEFT));
+		exitButtonUp = (CheckCollisionPointRec(mousePosition, scale_transform_rect(exitButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT));
 		EndDrawing();
+		if (game != nullptr)
+		{
+			delete game;
+			game = nullptr;
+		}
 	}
 
 	UnloadRenderTexture(canvas);
