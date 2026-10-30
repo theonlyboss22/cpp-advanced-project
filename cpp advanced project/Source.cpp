@@ -93,8 +93,7 @@ private:
 		do // keep generating rand num until card is available
 		{
 			drawnIndex = distribution(generator);
-		}
-		while (cards[drawnIndex].frequency <= 0);
+		} while (cards[drawnIndex].frequency <= 0);
 
 		hand[count] = drawnIndex; // Adds card to hand if available
 		count++;
@@ -246,7 +245,7 @@ public:
 			default: // Added default didn't know if this was necessary but I added it just in case -Zane
 				cout << "Invalid action. Try again.\n";
 				break;
-				
+
 			}
 		}
 		*/
@@ -331,7 +330,7 @@ class Roulette : public Game // Recycled code from previous project of mine, and
 private:
 	struct PocketGroup // holds color name and associated pocket numbers
 	{
-		string colorName; 
+		string colorName;
 		vector<int> pocketNumbers;
 	};
 
@@ -388,7 +387,7 @@ public:
 			cout << "\nThe roulette wheel spins...\n";
 			cout << "Winning Number: " << winningPocket << endl;
 
-			PocketGroup blackGroup = { "Black", {2, 4, 6, 8, 10, 11, 13, 15, 17, 20, 22, 24, 26, 28, 29, 31, 33, 35} }; 
+			PocketGroup blackGroup = { "Black", {2, 4, 6, 8, 10, 11, 13, 15, 17, 20, 22, 24, 26, 28, 29, 31, 33, 35} };
 			PocketGroup redGroup = { "Red", {1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36} };
 			PocketGroup greenGroup = { "Green", {0} };
 
@@ -444,7 +443,7 @@ public:
 			else if (choice == 5 && winningPocket == specificNumberBet)
 			{
 				won = true;
-				int payoutMultiplier = 35; 
+				int payoutMultiplier = 35;
 			}
 
 			if (won)
@@ -647,7 +646,7 @@ private:
 			// Determine Multiplier
 			double multiplier = 0;
 			int playerPlace = horse[selectHorse - 1].getPlace();
-			
+
 			if (horseCount == 3) {
 				if (playerPlace == 1) {
 					multiplier = 2.0;
@@ -773,7 +772,7 @@ public:
 			cout << "\nChoice: " << endl;
 			cin >> choice;
 
-			switch (choice) 
+			switch (choice)
 			{
 			case 1:
 				playRace(balance, 3, 100);
@@ -829,13 +828,13 @@ int main()
 
 	// save all accounts and balances
 	auto saveAccounts = [&]()
-	{
-		ofstream outFile("accounts.txt");
-		for (int i = 0; i < accountCount; i++)
 		{
-			outFile << accounts[i].username << " " << accounts[i].password << " " << accounts[i].balance << endl;
-		}
-	};
+			ofstream outFile("accounts.txt");
+			for (int i = 0; i < accountCount; i++)
+			{
+				outFile << accounts[i].username << " " << accounts[i].password << " " << accounts[i].balance << endl;
+			}
+		};
 
 	// login and sign in
 	while (currentAccount == -1)
@@ -1049,12 +1048,24 @@ int main()
 		Rectangle sourceRec = { 0.0f, 0.0f, BASE_WIDTH, -BASE_HEIGHT }; // source rectangle for render texture - Dom
 		Rectangle destRec = { offsetX, offsetY, BASE_WIDTH * scale, BASE_HEIGHT * scale }; // destination rectangle for render texture - Dom
 
+		auto scale_transform_vec2 = [&](Vector2 orig) -> Vector2 {
+			return Vector2{(orig.x * scale) + offsetX, (orig.y * scale) + offsetY};
+		};
+
+		auto scale_transform_rect = [&](Rectangle orig) -> Rectangle {
+			return Rectangle{
+				(orig.x * scale) + offsetX, 
+				(orig.y * scale) + offsetY, 
+				(orig.width * scale), 
+				(orig.height * scale), 
+			};
+		};
 
 		BeginDrawing();
 		ClearBackground(BLACK);
 		DrawTexturePro(canvas.texture, sourceRec, destRec, { 0, 0 }, 0.0f, WHITE); // draws the scaled and offset canvas to the window - Dom
-		bjButtonDown = (CheckCollisionPointRec(mousePosition, blackjackButton) && IsMouseButtonDown(MOUSE_BUTTON_LEFT));
-		bjButtonUp = (CheckCollisionPointRec(mousePosition, blackjackButton) && IsMouseButtonUp(MOUSE_BUTTON_LEFT));
+		bjButtonDown = (CheckCollisionPointRec(mousePosition, scale_transform_rect(blackjackButton)) && IsMouseButtonDown(MOUSE_BUTTON_LEFT));
+		bjButtonUp = (CheckCollisionPointRec(mousePosition, scale_transform_rect(blackjackButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT));
 		EndDrawing();
 	}
 
