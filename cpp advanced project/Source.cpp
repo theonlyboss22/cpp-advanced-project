@@ -8,6 +8,7 @@ using namespace std;
 #include <vector> // added for roullette game to store pocket numbers. -Zane
 #include <algorithm> // added for find() function in roulette game. - Zane
 #include "raylib.h" // yall will need to install raylib to compile this - Dom
+#include <map> // added for card textures in blackjack - Dom
 
 
 const int MAX_ACCOUNTS = 5;
@@ -79,7 +80,11 @@ private:
 		string name;
 		int value;
 		int frequency;
+		Texture2D texture;
 	};
+
+	map<string, Texture2D> cardTextures = { {"2", LoadTexture("assets/Deck Assets/2s.png")}, { "3", LoadTexture("assets/Deck Assets/3s.png")}, { "4", LoadTexture("assets/Deck Assets/4s.png")}, { "5", LoadTexture("assets/Deck Assets/5s.png")}, { "6", LoadTexture("assets/Deck Assets/6s.png")}, { "7", LoadTexture("assets/Deck Assets/7s.png")}, { "8", LoadTexture("assets/Deck Assets/8s.png")}, { "9", LoadTexture("assets/Deck Assets/9s.png")}, { "10", LoadTexture("assets/Deck Assets/Ts.png")}, { "Jack", LoadTexture("assets/Deck Assets/Js.png")}, { "Queen", LoadTexture("assets/Deck Assets/Qs.png")}, { "King", LoadTexture("assets/Deck Assets/Ks.png")}, { "Ace", LoadTexture("assets/Deck Assets/As.png")} };
+
 	// Passes gen by ref using 'auto&' or 'default_random_engine&'
 	void drawCard(int hand[], int& count, card cards[], default_random_engine& generator, uniform_int_distribution<int>& distribution)
 	{
@@ -98,12 +103,13 @@ private:
 		cout << endl;
 	}
 
-	void printHand(const int hand[], int count, const card cards[])
+	void printHand(const int hand[], int count, card cards[])
 	{
 		cout << "Your Hand:";
 		for (int i = 0; i < count; i++)
 		{
 			int cardIndex = hand[i];
+			cards[cardIndex].texture = cardTextures[cards[cardIndex].name];
 			cout << " |" << cards[cardIndex].name << "| ";
 		}
 		cout << endl;
@@ -799,7 +805,6 @@ public:
 
 int main()
 {
-	bool blackjackPlaying = false;
 	// ACCOUNT SYSTEM
 	Account accounts[MAX_ACCOUNTS];
 	int accountCount = 0;
@@ -985,6 +990,8 @@ int main()
 		}
 	}*/
 
+	bool bjButtonDown = false;
+	bool bjButtonUp = false;
 	Vector2 basicButtonScaleXY = { 50, 50 };
 	const float BASE_WIDTH = 1920.0f;
 	const float BASE_HEIGHT = 1080.0f;
@@ -997,6 +1004,10 @@ int main()
 	RenderTexture2D canvas = LoadRenderTexture(BASE_WIDTH, BASE_HEIGHT); // creates a render texture to scale to and render our window within - Dom
 
 	Rectangle blackjackButton = { 100, 200, basicButtonScaleXY.x, basicButtonScaleXY.y }; // button to play blackjack (x, y, width, height) - Dom
+	Rectangle slotsButton = { 100, 300, basicButtonScaleXY.x, basicButtonScaleXY.y }; // button to play slots (x, y, width, height) - Dom
+	Rectangle rouletteButton = { 100, 400, basicButtonScaleXY.x, basicButtonScaleXY.y }; // button to play roulette (x, y, width, height) - Dom
+	Rectangle horseRaceButton = { 100, 500, basicButtonScaleXY.x, basicButtonScaleXY.y }; // button to play horse race (x, y, width, height) - Dom
+	Rectangle exitButton = { 100, 600, basicButtonScaleXY.x, basicButtonScaleXY.y }; // button to exit game (x, y, width, height) - Dom
 
 	// this block renders all our textures and text - Dom
 	while (!WindowShouldClose())
@@ -1009,17 +1020,26 @@ int main()
 		DrawText(("Balance: $" + to_string(balance)).c_str(), 800, 200, 30, WHITE);
 		DrawRectangleRec(blackjackButton, BLACK); // draws the button to play blackjack - Dom
 		DrawText("Blackjack", blackjackButton.x + blackjackButton.width + 25, (blackjackButton.y + (blackjackButton.height / 3)), 30, WHITE);
-		if (CheckCollisionPointRec(mousePosition, blackjackButton) && IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+		DrawRectangleRec(slotsButton, BLACK); // draws the button to play slots - Dom
+		DrawText("Slots", slotsButton.x + slotsButton.width + 25, (slotsButton.y + (slotsButton.height / 3)), 30, WHITE);
+		DrawRectangleRec(rouletteButton, BLACK); // draws the button to play roulette - Dom
+		DrawText("Roulette", rouletteButton.x + rouletteButton.width + 25, (rouletteButton.y + (rouletteButton.height / 3)), 30, WHITE);
+		DrawRectangleRec(horseRaceButton, BLACK); // draws the button to play horse race - Dom
+		DrawText("Horse Race", horseRaceButton.x + horseRaceButton.width + 25, (horseRaceButton.y + (horseRaceButton.height / 3)), 30, WHITE);
+		DrawRectangleRec(exitButton, BLACK); // draws the button to exit game - Dom
+		DrawText("Exit", exitButton.x + exitButton.width + 25, (exitButton.y + (exitButton.height / 3)), 30, WHITE);
+		if (bjButtonDown)
 		{
 			DrawRectangleRec(blackjackButton, RED); // changes button color to red when clicked - Dom
 			game = new Blackjack();
 			(*game).play();
 		}
-		if (CheckCollisionPointRec(mousePosition, blackjackButton) && IsMouseButtonUp(MOUSE_BUTTON_LEFT))
+		if (bjButtonUp)
 		{
 			DrawRectangleRec(blackjackButton, DARKGRAY);
-			DrawText(("Balance: $" + to_string(balance)).c_str(), 800, 200, 30, WHITE);
 		}
+		bjButtonDown = false;
+		bjButtonUp = false;
 		EndTextureMode();
 
 		float scale = min(GetScreenWidth() / BASE_WIDTH, GetScreenHeight() / BASE_HEIGHT); // determining scale for render window - Dom
@@ -1033,6 +1053,8 @@ int main()
 		BeginDrawing();
 		ClearBackground(BLACK);
 		DrawTexturePro(canvas.texture, sourceRec, destRec, { 0, 0 }, 0.0f, WHITE); // draws the scaled and offset canvas to the window - Dom
+		bjButtonDown = (CheckCollisionPointRec(mousePosition, blackjackButton) && IsMouseButtonDown(MOUSE_BUTTON_LEFT));
+		bjButtonUp = (CheckCollisionPointRec(mousePosition, blackjackButton) && IsMouseButtonUp(MOUSE_BUTTON_LEFT));
 		EndDrawing();
 	}
 
