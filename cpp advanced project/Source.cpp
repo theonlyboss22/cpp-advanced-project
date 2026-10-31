@@ -127,6 +127,10 @@ public:
 	{
 		return name;
 	}
+	void setReturnToMenu(bool value)
+	{
+		returnToMenu = value;
+	}
 	bool isBetLocked() const
 	{
 		return betLocked;
@@ -148,6 +152,8 @@ private:
 		Texture2D texture;
 	};
 
+	Vector2 lastDisplayedCardPosition = { 200, 300 }; // Starting position for the first card
+
 	// Passes gen by ref using 'auto&' or 'default_random_engine&'
 	void drawCard(int hand[], int& count, card cards[], default_random_engine& generator, uniform_int_distribution<int>& distribution)
 	{
@@ -162,19 +168,28 @@ private:
 		count++;
 
 		cards[drawnIndex].frequency--; // Removes card from deck
-		cout << endl;
 	}
 
-	void printHand(const int hand[], int count, card cards[])
+	void DisplayDealerHand(const int hand[], int count, card cards[]) // new print function to display dealer hand instead of player (worth noting that its at this point in which a good programmer would refactor all of this dealer vs player stuff into classes using inheritance lmao) - Dom
 	{
-		cout << "Your Hand:";
 		for (int i = 0; i < count; i++)
 		{
 			int cardIndex = hand[i];
 			cards[cardIndex].texture = cardTextures[cards[cardIndex].name];
-			cout << " |" << cards[cardIndex].name << "| ";
+			DrawTexture(cards[cardIndex].texture, 200 + (i * 200), 600, WHITE);
+			lastDisplayedCardPosition = { 200.0f + (i * 200), 600 }; // Update the last displayed card position
 		}
-		cout << endl;
+	}
+
+	void DisplayHand(const int hand[], int count, card cards[])
+	{
+		for (int i = 0; i < count; i++)
+		{
+			int cardIndex = hand[i];
+			cards[cardIndex].texture = cardTextures[cards[cardIndex].name];
+			DrawTexture(cards[cardIndex].texture, 200 + (i * 200), 300, WHITE);
+			lastDisplayedCardPosition = { 200.0f + (i * 200), 300 }; // Update the last displayed card position
+		}
 	}
 
 	int calculateHandValue(const int hand[], int count, const card cards[])
@@ -225,22 +240,20 @@ public:
 	void play() override
 	{
 
-		default_random_engine generator(random_device{}());
+		Rectangle backButton = { 100, 980, basicButtonScaleXY.x, basicButtonScaleXY.y };
 
-		int hand[11];
-		int count = 0;
-		int currentHandValue = 0;
-		bool playerTurn = true;
+		bool backButtonDown = CheckCollisionPointRec(mousePosition, scale_transform_rect(backButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+		bool backButtonUp = CheckCollisionPointRec(mousePosition, scale_transform_rect(backButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT);
+
 
 		setName("Blackjack");
 
 		DrawTexture(background, 0, 0, WHITE);
 		DrawText(getName().c_str(), 800, 100, 50, WHITE);
 		DrawText(("Balance: $" + to_string(balance)).c_str(), 800, 200, 30, WHITE);
+		DrawRectangleRec(backButton, BLACK); // draws the button to exit game - Dom
+		DrawText("Back", backButton.x + backButton.width + 25, (backButton.y + (backButton.height / 3)), 30, WHITE);
 
-		card cards[] = { {"2", 2, 4}, {"3", 3, 4}, {"4", 4, 4}, {"5", 5, 4}, {"6", 6, 4}, {"7", 7, 4}, {"8", 8, 4}, {"9", 9, 4}, {"10", 10, 4}, {"Jack", 10, 4}, {"Queen", 10, 4}, {"King", 10, 4}, {"Ace", 11, 4} };
-		uniform_int_distribution<int> distribution(0, (sizeof(cards) / sizeof(cards[0])) - 1); // changed index so it works
-		int randomNumber = distribution(generator);
 
 		if (!isBetLocked())
 		{
@@ -251,19 +264,45 @@ public:
 			}
 		}
 
-		/*
-		int selectedAction = 0;
+		if (backButtonDown)
+		{
+			setReturnToMenu(true);
+			return;
+		}
+		if (backButtonUp)
+		{
+			DrawRectangleRec(backButton, DARKGRAY);
+		}
 
+		int dealerHand[11];
+		int dealerCount = 0;
+		int hand[11];
+		int count = 0;
+		int currentHandValue = 0;
+		int currentDealerHandValue = 0;
+		bool playing = true;
+		bool doubleDownLock = false;
 
-		cout << "Blackjack selected. \n";
-
+		default_random_engine generator(random_device{}());
+		card cards[] = { {"2", 2, 4}, {"3", 3, 4}, {"4", 4, 4}, {"5", 5, 4}, {"6", 6, 4}, {"7", 7, 4}, {"8", 8, 4}, {"9", 9, 4}, {"10", 10, 4}, {"Jack", 10, 4}, {"Queen", 10, 4}, {"King", 10, 4}, {"Ace", 11, 4} };
+		uniform_int_distribution<int> distribution(0, (sizeof(cards) / sizeof(cards[0])) - 1); // changed index so it works
+		int randomNumber = distribution(generator);
 
 		drawCard(hand, count, cards, generator, distribution); // changed to drawHand to drawCard so at start 2 cards are drawn. -Zane
+		drawCard(dealerHand, dealerCount, cards, generator, distribution); // draws initial dealer card with new variables to store dealer hand seperatley - Dom
 		drawCard(hand, count, cards, generator, distribution);
 
-		printHand(hand, count, cards); // printHand function added to display the player's hand instead of using drawHand
+		DisplayHand(hand, count, cards); // refactored the print hand function to display hand using raylib textures instead of console output. - Dom
+		DisplayDealerHand(dealerHand, dealerCount, cards); // refactored the print dealer hand function to display dealer hand using raylib textures instead of console output. - Dom
+
+		drawCard(dealerHand, dealerCount, cards, generator, distribution); // draws second dealer card after displaying previous cards to simulate it being face down until later in the game - Dom
+
+		DrawTexture(cardTextures["back"], lastDisplayedCardPosition.x + 200, lastDisplayedCardPosition.y, WHITE); // displays the second dealer card face down - Dom
+
+		currentDealerHandValue = calculateHandValue(dealerHand, dealerCount, cards);
 		currentHandValue = calculateHandValue(hand, count, cards);
 
+		/*
 		cout << "Current Hand Value: " << currentHandValue << endl;
 
 		// Check initial hand for win condition
@@ -1061,7 +1100,7 @@ int main()
 
 	background = LoadTexture("assets/background.png"); // gets background image from assets folder and loads it in memory - Dom
 	Texture2D gameOverScreen = LoadTexture("assets/gameOver.png"); // gets game over image from assets folder and loads it in memory - Dom
-	cardTextures = { {"2", LoadTexture("assets/Deck Assets/2s.png")}, { "3", LoadTexture("assets/Deck Assets/3s.png")}, { "4", LoadTexture("assets/Deck Assets/4s.png")}, { "5", LoadTexture("assets/Deck Assets/5s.png")}, { "6", LoadTexture("assets/Deck Assets/6s.png")}, { "7", LoadTexture("assets/Deck Assets/7s.png")}, { "8", LoadTexture("assets/Deck Assets/8s.png")}, { "9", LoadTexture("assets/Deck Assets/9s.png")}, { "10", LoadTexture("assets/Deck Assets/Ts.png")}, { "Jack", LoadTexture("assets/Deck Assets/Js.png")}, { "Queen", LoadTexture("assets/Deck Assets/Qs.png")}, { "King", LoadTexture("assets/Deck Assets/Ks.png")}, { "Ace", LoadTexture("assets/Deck Assets/As.png")} };
+	cardTextures = { {"back", LoadTexture("assets/Deck Assets/back.png")}, { "2", LoadTexture("assets/Deck Assets/2s.png") }, {"3", LoadTexture("assets/Deck Assets/3s.png")}, {"4", LoadTexture("assets/Deck Assets/4s.png")}, {"5", LoadTexture("assets/Deck Assets/5s.png")}, {"6", LoadTexture("assets/Deck Assets/6s.png")}, {"7", LoadTexture("assets/Deck Assets/7s.png")}, {"8", LoadTexture("assets/Deck Assets/8s.png")}, {"9", LoadTexture("assets/Deck Assets/9s.png")}, {"10", LoadTexture("assets/Deck Assets/Ts.png")}, {"Jack", LoadTexture("assets/Deck Assets/Js.png")}, {"Queen", LoadTexture("assets/Deck Assets/Qs.png")}, {"King", LoadTexture("assets/Deck Assets/Ks.png")}, {"Ace", LoadTexture("assets/Deck Assets/As.png")}};
 
 
 	RenderTexture2D canvas = LoadRenderTexture(BASE_WIDTH, BASE_HEIGHT); // creates a render texture to scale to and render our window within - Dom
@@ -1167,17 +1206,6 @@ int main()
 			break;
 		}
 		EndTextureMode();
-
-		bjButtonDown = false;
-		bjButtonUp = false;
-		slotsButtonDown = false;
-		slotsButtonUp = false;
-		rouletteButtonDown = false;
-		rouletteButtonUp = false;
-		horseRaceButtonDown = false;
-		horseRaceButtonUp = false;
-		exitButtonDown = false;
-		exitButtonUp = false;
 
 		Rectangle sourceRec = { 0.0f, 0.0f, BASE_WIDTH, -BASE_HEIGHT }; // source rectangle for render texture - Dom
 		Rectangle destRec = { offsetX, offsetY, BASE_WIDTH * scale, BASE_HEIGHT * scale }; // destination rectangle for render texture - Dom
