@@ -14,11 +14,15 @@ using namespace std;
 const int MAX_ACCOUNTS = 5;
 const float BASE_WIDTH = 1920.0f;
 const float BASE_HEIGHT = 1080.0f;
+const Vector2 basicButtonScaleXY = { 50, 50 };
 
+map<string, Texture2D> cardTextures;
+Texture2D background;
 Vector2 mousePosition;
 float scale;
 float offsetX;
 float offsetY;
+
 
 //handles scaling of any vec2 - Dom
 auto scale_transform_vec2 = [&](Vector2 orig) -> Vector2 {
@@ -34,7 +38,7 @@ struct Account // Account Information
 {
 	string username;
 	string password;
-	int balance;
+	int balance = 0;
 };
 
 int balance = 0;
@@ -51,6 +55,7 @@ private:
 	string name;
 	int betAmount = 0;
 	bool betLocked = false;
+	bool returnToMenu = false;
 public:
 	int bet = 0;
 	virtual void play() = 0;
@@ -59,18 +64,23 @@ public:
 		Rectangle betLockButton = { 800, 600, 150, 50 };
 		Rectangle betIncreaseButton = { 800 + ((strlen(to_string(betAmount).c_str()) * 20)), 500, 25, 25 };
 		Rectangle betDecreaseButton = { 800 - 25, 500, 25, 25 };
+		Rectangle backButton = { 100, 980, basicButtonScaleXY.x, basicButtonScaleXY.y };
 		bool betIncreaseButtonPressed = CheckCollisionPointRec(mousePosition, scale_transform_rect(betIncreaseButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
 		bool betIncreaseButtonUp = CheckCollisionPointRec(mousePosition, scale_transform_rect(betIncreaseButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT);
 		bool betLockButtonPressed = CheckCollisionPointRec(mousePosition, scale_transform_rect(betLockButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
 		bool betLockButtonUp = CheckCollisionPointRec(mousePosition, scale_transform_rect(betLockButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT);
 		bool betDecreaseButtonPressed = CheckCollisionPointRec(mousePosition, scale_transform_rect(betDecreaseButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
 		bool betDecreaseButtonUp = CheckCollisionPointRec(mousePosition, scale_transform_rect(betDecreaseButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT);
+		bool backButtonDown = CheckCollisionPointRec(mousePosition, scale_transform_rect(backButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+		bool backButtonUp = CheckCollisionPointRec(mousePosition, scale_transform_rect(backButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT);
 
 		DrawText("Select your bet amount:", 800, 300, 30, WHITE);
 		DrawText(to_string(betAmount).c_str(), 800, 500, 30, WHITE);
 		DrawText("+", 800 + ((strlen(to_string(betAmount).c_str()) * 20)), 500, 30, WHITE);
 		DrawText("-", 800 - 25, 500, 30, WHITE);
 		DrawText("Lock in bet", 800, 600, 30, WHITE);
+		DrawRectangleRec(backButton, BLACK); // draws the button to exit game - Dom
+		DrawText("Back", backButton.x + backButton.width + 25, (backButton.y + (backButton.height / 3)), 30, WHITE);
 
 		if (betIncreaseButtonPressed && betAmount < balance)
 		{
@@ -96,6 +106,15 @@ public:
 		{
 			DrawText("-", 800 - 25, 500, 30, DARKGRAY);
 		}
+		if (backButtonDown)
+		{
+			returnToMenu = true;
+			return -1;
+		}
+		if (backButtonUp)
+		{
+			DrawRectangleRec(backButton, DARKGRAY);
+		}
 
 		return betLocked ? betAmount : 0;
 	}
@@ -112,6 +131,10 @@ public:
 	{
 		return betLocked;
 	}
+	bool wantsReturnToMenu() const
+	{
+		return returnToMenu;
+	}
 };
 
 class Blackjack : public Game
@@ -124,9 +147,6 @@ private:
 		int frequency;
 		Texture2D texture;
 	};
-
-	map<string, Texture2D> cardTextures = { {"2", LoadTexture("assets/Deck Assets/2s.png")}, { "3", LoadTexture("assets/Deck Assets/3s.png")}, { "4", LoadTexture("assets/Deck Assets/4s.png")}, { "5", LoadTexture("assets/Deck Assets/5s.png")}, { "6", LoadTexture("assets/Deck Assets/6s.png")}, { "7", LoadTexture("assets/Deck Assets/7s.png")}, { "8", LoadTexture("assets/Deck Assets/8s.png")}, { "9", LoadTexture("assets/Deck Assets/9s.png")}, { "10", LoadTexture("assets/Deck Assets/Ts.png")}, { "Jack", LoadTexture("assets/Deck Assets/Js.png")}, { "Queen", LoadTexture("assets/Deck Assets/Qs.png")}, { "King", LoadTexture("assets/Deck Assets/Ks.png")}, { "Ace", LoadTexture("assets/Deck Assets/As.png")} };
-	Texture2D blackjackBackground = LoadTexture("assets/background.png");
 
 	// Passes gen by ref using 'auto&' or 'default_random_engine&'
 	void drawCard(int hand[], int& count, card cards[], default_random_engine& generator, uniform_int_distribution<int>& distribution)
@@ -214,7 +234,7 @@ public:
 
 		setName("Blackjack");
 
-		DrawTexture(blackjackBackground, 0, 0, WHITE);
+		DrawTexture(background, 0, 0, WHITE);
 		DrawText(getName().c_str(), 800, 100, 50, WHITE);
 		DrawText(("Balance: $" + to_string(balance)).c_str(), 800, 200, 30, WHITE);
 
@@ -225,7 +245,7 @@ public:
 		if (!isBetLocked())
 		{
 			bet = getBet();
-			if (bet == 0)
+			if (bet == -1 || bet == 0)
 			{
 				return;
 			}
@@ -302,10 +322,6 @@ public:
 			}
 		}
 		*/
-		for (auto& element : cardTextures)
-		{
-			UnloadTexture(element.second);
-		}
 	}
 };
 
@@ -316,10 +332,18 @@ public:
 	{
 		setName("Slots");
 
-		Texture2D background = LoadTexture("assets/background.png"); // gets background image from assets folder and loads it in memory - Dom
 		DrawTexture(background, 0, 0, WHITE);
 		DrawText(getName().c_str(), 800, 100, 50, WHITE);
 		DrawText(("Balance: $" + to_string(balance)).c_str(), 800, 200, 30, WHITE);
+
+		if (!isBetLocked())
+		{
+			bet = getBet();
+			if (bet == -1 || bet == 0)
+			{
+				return;
+			}
+		}
 
 		/*bool keepPlaying = true;
 		while (keepPlaying)
@@ -402,10 +426,18 @@ public:
 	{
 		setName("Roulette");
 
-		Texture2D background = LoadTexture("assets/background.png"); // gets background image from assets folder and loads it in memory - Dom
 		DrawTexture(background, 0, 0, WHITE);
 		DrawText(getName().c_str(), 800, 100, 50, WHITE);
 		DrawText(("Balance: $" + to_string(balance)).c_str(), 800, 200, 30, WHITE);
+
+		if (!isBetLocked())
+		{
+			bet = getBet();
+			if (bet == -1 || bet == 0)
+			{
+				return;
+			}
+		}
 
 		/*bool keepPlaying = true;
 		while (keepPlaying)
@@ -812,10 +844,18 @@ public:
 	{
 		setName("Horse Race");
 
-		Texture2D background = LoadTexture("assets/background.png"); // gets background image from assets folder and loads it in memory - Dom
 		DrawTexture(background, 0, 0, WHITE);
 		DrawText(getName().c_str(), 800, 100, 50, WHITE);
 		DrawText(("Balance: $" + to_string(balance)).c_str(), 800, 200, 30, WHITE);
+
+		if (!isBetLocked())
+		{
+			bet = getBet();
+			if (bet == -1 || bet == 0)
+			{
+				return;
+			}
+		}
 
 		/*while (true)
 		{
@@ -1015,13 +1055,14 @@ int main()
 	bool horseRaceButtonUp = false;
 	bool exitButtonDown = false;
 	bool exitButtonUp = false;
-	Vector2 basicButtonScaleXY = { 50, 50 };
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE); // allows window to be resized - Dom
 	InitWindow(BASE_WIDTH, BASE_HEIGHT, "CasinoGame"); // initializes window with base width and height resolution - Dom
 	SetTargetFPS(60);
 
-	Texture2D background = LoadTexture("assets/background.png"); // gets background image from assets folder and loads it in memory - Dom
+	background = LoadTexture("assets/background.png"); // gets background image from assets folder and loads it in memory - Dom
 	Texture2D gameOverScreen = LoadTexture("assets/gameOver.png"); // gets game over image from assets folder and loads it in memory - Dom
+	cardTextures = { {"2", LoadTexture("assets/Deck Assets/2s.png")}, { "3", LoadTexture("assets/Deck Assets/3s.png")}, { "4", LoadTexture("assets/Deck Assets/4s.png")}, { "5", LoadTexture("assets/Deck Assets/5s.png")}, { "6", LoadTexture("assets/Deck Assets/6s.png")}, { "7", LoadTexture("assets/Deck Assets/7s.png")}, { "8", LoadTexture("assets/Deck Assets/8s.png")}, { "9", LoadTexture("assets/Deck Assets/9s.png")}, { "10", LoadTexture("assets/Deck Assets/Ts.png")}, { "Jack", LoadTexture("assets/Deck Assets/Js.png")}, { "Queen", LoadTexture("assets/Deck Assets/Qs.png")}, { "King", LoadTexture("assets/Deck Assets/Ks.png")}, { "Ace", LoadTexture("assets/Deck Assets/As.png")} };
+
 
 	RenderTexture2D canvas = LoadRenderTexture(BASE_WIDTH, BASE_HEIGHT); // creates a render texture to scale to and render our window within - Dom
 
@@ -1029,12 +1070,13 @@ int main()
 	Rectangle slotsButton = { 100, 300, basicButtonScaleXY.x, basicButtonScaleXY.y }; // button to play slots (x, y, width, height) - Dom
 	Rectangle rouletteButton = { 100, 400, basicButtonScaleXY.x, basicButtonScaleXY.y }; // button to play roulette (x, y, width, height) - Dom
 	Rectangle horseRaceButton = { 100, 500, basicButtonScaleXY.x, basicButtonScaleXY.y }; // button to play horse race (x, y, width, height) - Dom
-	Rectangle exitButton = { 100, 600, basicButtonScaleXY.x, basicButtonScaleXY.y }; // button to exit game (x, y, width, height) - Dom
+	Rectangle exitButton = { 100, 980, basicButtonScaleXY.x, basicButtonScaleXY.y }; // button to exit game (x, y, width, height) - Dom
 	Game* game = nullptr;
 
 	// this block renders all our textures and text - Dom
 	while (!WindowShouldClose())
 	{
+		bool returnedToMenuThisFrame = false;
 		mousePosition = GetMousePosition(); // gets mouse position - Dom
 		scale = min(GetScreenWidth() / BASE_WIDTH, GetScreenHeight() / BASE_HEIGHT); // determining scale for render window - Dom
 		offsetX = (GetScreenWidth() - BASE_WIDTH * scale) * 0.5f; // determining offset for render window - Dom
@@ -1097,8 +1139,9 @@ int main()
 		{
 			DrawRectangleRec(horseRaceButton, DARKGRAY);
 		}
-		if (exitButtonDown)
+		if (exitButtonDown && game == nullptr)
 		{
+			cout << "Exit button triggered" << endl;
 			break;
 		}
 		if (exitButtonUp)
@@ -1108,9 +1151,16 @@ int main()
 		if (game != nullptr)
 		{
 			game->play();
+			if (game->wantsReturnToMenu())
+			{
+				delete game;
+				game = nullptr;
+				returnedToMenuThisFrame = true;
+			}
 		}
-		if (balance <= 0)
+		if (balance <= 0 && game != nullptr)
 		{
+			cout << "Game over triggered. Balance: " << balance << endl;
 			DrawTexture(gameOverScreen, 0, 0, WHITE);
 			accounts[currentAccount].balance = balance;
 			saveAccounts();
@@ -1135,15 +1185,15 @@ int main()
 
 
 		//all of these are getting the mouse position and checking if the mouse is over the button and if the mouse button is down or up - Dom
-		bjButtonDown = (CheckCollisionPointRec(mousePosition, scale_transform_rect(blackjackButton)) && IsMouseButtonDown(MOUSE_BUTTON_LEFT));
+		bjButtonDown = (CheckCollisionPointRec(mousePosition, scale_transform_rect(blackjackButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT));
 		bjButtonUp = (CheckCollisionPointRec(mousePosition, scale_transform_rect(blackjackButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT));
-		slotsButtonDown = (CheckCollisionPointRec(mousePosition, scale_transform_rect(slotsButton)) && IsMouseButtonDown(MOUSE_BUTTON_LEFT));
+		slotsButtonDown = (CheckCollisionPointRec(mousePosition, scale_transform_rect(slotsButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT));
 		slotsButtonUp = (CheckCollisionPointRec(mousePosition, scale_transform_rect(slotsButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT));
-		rouletteButtonDown = (CheckCollisionPointRec(mousePosition, scale_transform_rect(rouletteButton)) && IsMouseButtonDown(MOUSE_BUTTON_LEFT));
+		rouletteButtonDown = (CheckCollisionPointRec(mousePosition, scale_transform_rect(rouletteButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT));
 		rouletteButtonUp = (CheckCollisionPointRec(mousePosition, scale_transform_rect(rouletteButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT));
-		horseRaceButtonDown = (CheckCollisionPointRec(mousePosition, scale_transform_rect(horseRaceButton)) && IsMouseButtonDown(MOUSE_BUTTON_LEFT));
+		horseRaceButtonDown = (CheckCollisionPointRec(mousePosition, scale_transform_rect(horseRaceButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT));
 		horseRaceButtonUp = (CheckCollisionPointRec(mousePosition, scale_transform_rect(horseRaceButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT));
-		exitButtonDown = (CheckCollisionPointRec(mousePosition, scale_transform_rect(exitButton)) && IsMouseButtonDown(MOUSE_BUTTON_LEFT));
+		exitButtonDown = (!returnedToMenuThisFrame && CheckCollisionPointRec(mousePosition, scale_transform_rect(exitButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT));
 		exitButtonUp = (CheckCollisionPointRec(mousePosition, scale_transform_rect(exitButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT));
 
 
@@ -1156,6 +1206,10 @@ int main()
 
 	UnloadRenderTexture(canvas);
 	UnloadTexture(background);
+	for (auto& element : cardTextures)
+	{
+		UnloadTexture(element.second);
+	}
 	delete game;
 	CloseWindow();
 	return 0;
