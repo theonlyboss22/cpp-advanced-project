@@ -397,35 +397,75 @@ public:
 			}
 
 			cout << "Roulette selected. \n";
-			bet = getBet();
-			balance -= bet;
 
 			int choice = 0;
+			int betQuantity = 0;
 			int specificNumberBet = -1; // To store the chosen number if applicable
+			int selectedNumbers[3] = {}; // Stores multiple specific number bets
+			int wagerAmounts[3] = {}; // Stores all bet amounts
+			int betsPlaced = 0;
 			cout << "\nChoose your bet type:\n";
 			cout << "1. Red (Pays 2x)\n";
 			cout << "2. Black (Pays 2x)\n";
 			cout << "3. Even (Pays 2x)\n";
 			cout << "4. Odd (Pays 2x)\n";
-			cout << "5. Specific Number (0-36) (Pays 35x)\n";
+			cout << "5. Specific Number (0-36) (Pays 35:1 + original wager)\n";
 			cout << "Choice: ";
 			cin >> choice;
 
 			if (choice == 5)
 			{
-				cout << "Enter a number to bet on (0-36): ";
-				cin >> specificNumberBet;
-				if (specificNumberBet < 0 || specificNumberBet > 36)
+				cout << "(Bet Limit = 3)" << endl;
+				cout << "Bet Quantity? ";
+				cin >> betQuantity;
+				cout << endl;
+				while (cin.fail() || betQuantity <= 0 || betQuantity > 3)
 				{
-					cout << "Invalid number. Returning your bet and exiting to menu.\n";
-					balance += bet;
-					break;
+					cin.clear();
+					cin.ignore(INT_MAX, '\n');
+
+					cout << "Invalid input. Enter a quantity from 1 to 3: ";
+					cin >> betQuantity;
+					cout << endl;
+				}
+
+				for (int i = 0; i < betQuantity; i++) // Asks for bet and number for each quantity. - Zane
+				{
+					if (balance <= 0)
+					{
+						cout << "No balance left for more bets. Spinning with your placed bets.\n";
+						break;
+					}
+
+					bet = getBet();
+					balance -= bet;
+
+					cout << "Enter a number to bet on (0-36): ";
+					cin >> specificNumberBet;
+					while (cin.fail() || specificNumberBet < 0 || specificNumberBet > 36)
+					{
+						cin.clear();
+						cin.ignore(INT_MAX, '\n');
+
+						cout << "Invalid input. Enter a number from 0 to 36: ";
+						cin >> specificNumberBet;
+						cout << endl;
+					}
+					selectedNumbers[i] = specificNumberBet;
+					wagerAmounts[i] = bet;
+					betsPlaced++;
 				}
 			}
+
+			else if (choice >= 1 && choice <= 4)
+			{
+				bet = getBet();
+				balance -= bet;
+			}
+
 			else if (choice < 1 || choice > 4)
 			{
-				cout << "Invalid choice. Returning your bet and exiting to menu.\n";
-				balance += bet;
+				cout << "Invalid choice. Exiting to menu.\n";
 				break;
 			}
 
@@ -489,17 +529,28 @@ public:
 			{
 				won = true;
 			}
-			else if (choice == 5 && winningPocket == specificNumberBet)
+			else if (choice == 5)
 			{
-				won = true;
-				int payoutMultiplier = 35;
+				for (int i = 0; i < betsPlaced; i++)
+				{
+					if (winningPocket == selectedNumbers[i])
+					{
+						won = true;
+						balance += wagerAmounts[i] * 36;
+
+						cout << "Winning number bet! Payout: +" << wagerAmounts[i] * 36 << "\n";
+					}
+				}
 			}
 
 			if (won)
 			{
-				int winnings = bet * 2;
-				balance += winnings;
-				cout << "You won! Payout: +" << winnings << "\n";
+				if (choice != 5)
+				{
+					int winnings = bet * 2;
+					balance += winnings;
+					cout << "You won! Payout: +" << winnings << "\n";
+				}
 			}
 			else
 			{
