@@ -65,22 +65,47 @@ public:
 	{
 		DrawTexture(background, 0, 0, WHITE);
 		Rectangle betLockButton = { 800, 600, 150, 50 };
-		Rectangle betIncreaseButton = { 800 + ((strlen(to_string(betAmount).c_str()) * 20)), 500, 25, 25 };
-		Rectangle betDecreaseButton = { 800 - 25, 500, 25, 25 };
+		Rectangle betIncreaseButton = { 800 + ((strlen(to_string(betAmount).c_str()) * 30)), 450, 30, 30 };
+		Rectangle betIncrease10Button = { 850 + ((strlen(to_string(betAmount).c_str()) * 30)), 450, 30, 30 };
+		Rectangle betIncrease100Button = { 1000 + ((strlen(to_string(betAmount).c_str()) * 30)), 450, 30, 30 };
+		Rectangle betIncrease1000Button = { 1200 + ((strlen(to_string(betAmount).c_str()) * 30)), 450, 30, 30 };
+		Rectangle betDecreaseButton = { 800 - 25, 450, 30, 30 };
+		Rectangle betDecrease10Button = { 800 - 125, 450, 30, 30 };
+		Rectangle betDecrease100Button = { 800 - 225, 450, 30, 30 };
+		Rectangle betDecrease1000Button = { 800 - 325, 450, 30, 30 };
 		Rectangle backButton = { 100, 980, basicButtonScaleXY.x, basicButtonScaleXY.y };
 		bool betIncreaseButtonPressed = CheckCollisionPointRec(mousePosition, scale_transform_rect(betIncreaseButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+		bool betIncrease10ButtonPressed = CheckCollisionPointRec(mousePosition, scale_transform_rect(betIncrease10Button)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+		bool betIncrease100ButtonPressed = CheckCollisionPointRec(mousePosition, scale_transform_rect(betIncrease100Button)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+		bool betIncrease1000ButtonPressed = CheckCollisionPointRec(mousePosition, scale_transform_rect(betIncrease1000Button)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
 		bool betIncreaseButtonUp = CheckCollisionPointRec(mousePosition, scale_transform_rect(betIncreaseButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT);
+		bool betIncrease10ButtonUp = CheckCollisionPointRec(mousePosition, scale_transform_rect(betIncrease10Button)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT);
+		bool betIncrease100ButtonUp = CheckCollisionPointRec(mousePosition, scale_transform_rect(betIncrease100Button)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT);
+		bool betIncrease1000ButtonUp = CheckCollisionPointRec(mousePosition, scale_transform_rect(betIncrease1000Button)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT);
 		bool betLockButtonPressed = CheckCollisionPointRec(mousePosition, scale_transform_rect(betLockButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
 		bool betLockButtonUp = CheckCollisionPointRec(mousePosition, scale_transform_rect(betLockButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT);
 		bool betDecreaseButtonPressed = CheckCollisionPointRec(mousePosition, scale_transform_rect(betDecreaseButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+		bool betDecrease10ButtonPressed = CheckCollisionPointRec(mousePosition, scale_transform_rect(betDecrease10Button)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+		bool betDecrease100ButtonPressed = CheckCollisionPointRec(mousePosition, scale_transform_rect(betDecrease100Button)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+		bool betDecrease1000ButtonPressed = CheckCollisionPointRec(mousePosition, scale_transform_rect(betDecrease1000Button)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
 		bool betDecreaseButtonUp = CheckCollisionPointRec(mousePosition, scale_transform_rect(betDecreaseButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT);
+		bool betDecrease10ButtonUp = CheckCollisionPointRec(mousePosition, scale_transform_rect(betDecrease10Button)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT);
+		bool betDecrease100ButtonUp = CheckCollisionPointRec(mousePosition, scale_transform_rect(betDecrease100Button)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT);
+		bool betDecrease1000ButtonUp = CheckCollisionPointRec(mousePosition, scale_transform_rect(betDecrease1000Button)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT);
 		bool backButtonDown = CheckCollisionPointRec(mousePosition, scale_transform_rect(backButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
 		bool backButtonUp = CheckCollisionPointRec(mousePosition, scale_transform_rect(backButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT);
 
+		DrawTextEx(fontCastellarRegular, ("Balance: $" + to_string(balance)).c_str(), { 800, 200 }, 30, 2, BLACK);
 		DrawTextEx(fontCastellarRegular, "Select your bet amount:", { 800, 300 }, 30, 2, BLACK);
-		DrawTextEx(fontCastellarRegular, to_string(betAmount).c_str(), { 800, 500 }, 30, 2, BLACK);
-		DrawText("+", 800.0f + ((strlen(to_string(betAmount).c_str()) * 20)), 500, 30, WHITE);
-		DrawText("-", 800 - 25, 500, 30, WHITE);
+		DrawTextEx(fontCastellarRegular, to_string(betAmount).c_str(), { 800, 450 }, 50, 2, BLACK);
+		DrawText("+", 800.0f + ((strlen(to_string(betAmount).c_str()) * 30)), 450, 50, WHITE);
+		DrawText("+ 10", 850.0f + ((strlen(to_string(betAmount).c_str()) * 30)), 450, 50, WHITE);
+		DrawText("+ 100", 1000.0f + ((strlen(to_string(betAmount).c_str()) * 30)), 450, 50, WHITE);
+		DrawText("+ 1000", 1200.0f + ((strlen(to_string(betAmount).c_str()) * 30)), 450, 50, WHITE);
+		DrawText("-", 800 - 25, 450, 50, WHITE);
+		DrawText("- 10", 800 - 125, 450, 50, WHITE);
+		DrawText("- 100", 800 - 225, 450, 50, WHITE);
+		DrawText("- 1000", 800 - 325, 450, 50, WHITE);
 		DrawTextEx(fontCastellarRegular, "Lock in bet", { 800, 600 }, 30, 2, BLACK);
 		DrawRectangleRec(backButton, BLACK); // draws the button to exit game - Dom
 		DrawTextEx(fontCastellarRegular, "Back", { backButton.x + backButton.width + 25, (backButton.y + (backButton.height / 3)) }, 30, 2, BLACK);
@@ -89,9 +114,33 @@ public:
 		{
 			betAmount++;
 		}
+		if (betIncrease10ButtonPressed && betAmount < balance)
+		{
+			betAmount+= 10;
+		}
+		if (betIncrease100ButtonPressed && betAmount < balance)
+		{
+			betAmount += 100;
+		}
+		if (betIncrease1000ButtonPressed && betAmount < balance)
+		{
+			betAmount += 1000;
+		}
 		if (betIncreaseButtonUp)
 		{
-			DrawText("+", 800.0f + ((strlen(to_string(betAmount).c_str()) * 20)), 500, 30, DARKGRAY);
+			DrawText("+", 800.0f + ((strlen(to_string(betAmount).c_str()) * 30)), 450, 50, DARKGRAY);
+		}
+		if (betIncrease10ButtonUp)
+		{
+			DrawText("+ 10", 850.0f + ((strlen(to_string(betAmount).c_str()) * 30)), 450, 50, DARKGRAY);
+		}
+		if (betIncrease100ButtonUp)
+		{
+			DrawText("+ 100", 1000.0f + ((strlen(to_string(betAmount).c_str()) * 30)), 450, 50, DARKGRAY);
+		}
+		if (betIncrease1000ButtonUp)
+		{
+			DrawText("+ 1000", 1200.0f + ((strlen(to_string(betAmount).c_str()) * 30)), 450, 50, DARKGRAY);
 		}
 		if (betLockButtonPressed && betAmount > 0)
 		{
@@ -105,9 +154,33 @@ public:
 		{
 			betAmount--;
 		}
+		if (betDecrease10ButtonPressed && betAmount > 0)
+		{
+			betAmount-= 10;
+		}
+		if (betDecrease100ButtonPressed && betAmount > 0)
+		{
+			betAmount -= 100;
+		}
+		if (betDecrease1000ButtonPressed && betAmount > 0)
+		{
+			betAmount -= 1000;
+		}
 		if (betDecreaseButtonUp)
 		{
-			DrawText("-", 800 - 25, 500, 30, DARKGRAY);
+			DrawText("-", 800 - 25, 450, 50, DARKGRAY);
+		}
+		if (betDecrease10ButtonUp)
+		{
+			DrawText("- 10", 800 - 125, 450, 50, DARKGRAY);
+		}
+		if (betDecrease100ButtonUp)
+		{
+			DrawText("- 100", 800 - 225, 450, 50, DARKGRAY);
+		}
+		if (betDecrease1000ButtonUp)
+		{
+			DrawText("- 1000", 800 - 325, 450, 50, DARKGRAY);
 		}
 		if (backButtonDown)
 		{
@@ -175,11 +248,11 @@ private:
 	Vector2 lastDisplayedCardPosition = { 400, 300 }; // Starting position for the first card
 
 	// Passes gen by ref using 'auto&' or 'default_random_engine&'
-	void drawCard(int hand[], int& count, card cards[], default_random_engine& generator, uniform_int_distribution<int>& distribution)
+	void drawCard(int hand[], int& count, card cards[], default_random_engine& generator, uniform_int_distribution<int>& distribution, bool notDealer)
 	{
 		int drawnIndex;
 
-		if (firstPass == true)
+		if (firstPass == true && notDealer)
 		{
 			do // keep generating rand num until card is available
 			{
@@ -325,17 +398,17 @@ public:
 
 		if ((hits + 2 >= count) || firstPass)
 		{
-			drawCard(hand, count, cards, generator, distribution); // changed to drawHand to drawCard so at start 2 cards are drawn. -Zane
+			drawCard(hand, count, cards, generator, distribution, true); // changed to drawHand to drawCard so at start 2 cards are drawn. -Zane
 		}
 		if (firstPass)
 		{
 			DrawTextEx(fontCastellarRegular, getName().c_str(), { 800, 100 }, 50, 2, BLACK);
 			DrawTextEx(fontCastellarRegular, ("Balance: $" + to_string(balance) + " +/- $" + to_string(bet)).c_str(), { 800, 200 }, 30, 2, BLACK);
-			drawCard(dealerHand, dealerCount, cards, generator, distribution); // draws initial dealer card with new variables to store dealer hand seperatley - Dom
+			drawCard(dealerHand, dealerCount, cards, generator, distribution, false); // draws initial dealer card with new variables to store dealer hand seperatley - Dom
 			DisplayHand(hand, count, cards); // refactored the print hand function to display hand using raylib textures instead of console output. - Dom
 			DisplayDealerHand(dealerHand, dealerCount, cards); // refactored the print dealer hand function to display dealer hand using raylib textures instead of console output. - Dom
 
-			drawCard(dealerHand, dealerCount, cards, generator, distribution); // draws second dealer card after displaying previous cards to simulate it being face down until later in the game - Dom
+			drawCard(dealerHand, dealerCount, cards, generator, distribution, false); // draws second dealer card after displaying previous cards to simulate it being face down until later in the game - Dom
 			DrawTexture(cardTextures["back"], lastDisplayedCardPosition.x + 200, lastDisplayedCardPosition.y, WHITE); // displays the second dealer card face down - Dom
 		}
 
@@ -1151,7 +1224,9 @@ int main()
 		}
 		else
 		{
-			cout << "\nInvalid choice. Please enter login, sign, or exit." << endl;
+			cout << "\nInvalid choice. Please enter login, create account, or exit." << endl;
+			cin.clear();
+			cin.ignore(INT_MAX, '\n');
 		}
 	}
 
@@ -1177,7 +1252,7 @@ int main()
 	background = LoadTexture("assets/background.png"); // gets background image from assets folder and loads it in memory - Dom
 	Texture2D gameOverScreen = LoadTexture("assets/gameOver.png"); // gets game over image from assets folder and loads it in memory - Dom
 	cardTextures = { {"back", LoadTexture("assets/Deck Assets/back.png")}, { "2", LoadTexture("assets/Deck Assets/2s.png") }, {"3", LoadTexture("assets/Deck Assets/3s.png")}, {"4", LoadTexture("assets/Deck Assets/4s.png")}, {"5", LoadTexture("assets/Deck Assets/5s.png")}, {"6", LoadTexture("assets/Deck Assets/6s.png")}, {"7", LoadTexture("assets/Deck Assets/7s.png")}, {"8", LoadTexture("assets/Deck Assets/8s.png")}, {"9", LoadTexture("assets/Deck Assets/9s.png")}, {"10", LoadTexture("assets/Deck Assets/Ts.png")}, {"Jack", LoadTexture("assets/Deck Assets/Js.png")}, {"Queen", LoadTexture("assets/Deck Assets/Qs.png")}, {"King", LoadTexture("assets/Deck Assets/Ks.png")}, {"Ace", LoadTexture("assets/Deck Assets/As.png")} };
-	fontCastellarRegular = LoadFont("assets/Castellar.ttf"); // gets font from assets folder and loads it in memory - Dom
+	fontCastellarRegular = LoadFontEx("assets/Castellar.ttf", 50, NULL, 0); // gets font from assets folder and loads it in memory - Dom
 	Music backgroundMusic = LoadMusicStream("assets/Audio/music.mp3"); // gets background music from assets folder and loads it in memory - Dom
 	PlayMusicStream(backgroundMusic); // plays background music - Dom
 
