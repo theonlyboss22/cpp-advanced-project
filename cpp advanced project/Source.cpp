@@ -71,8 +71,8 @@ public:
 		Rectangle betIncrease1000Button = { 1200 + ((strlen(to_string(betAmount).c_str()) * 30)), 450, 30, 30 };
 		Rectangle betDecreaseButton = { 800 - 25, 450, 30, 30 };
 		Rectangle betDecrease10Button = { 800 - 125, 450, 30, 30 };
-		Rectangle betDecrease100Button = { 800 - 225, 450, 30, 30 };
-		Rectangle betDecrease1000Button = { 800 - 325, 450, 30, 30 };
+		Rectangle betDecrease100Button = { 800 - 275, 450, 30, 30 };
+		Rectangle betDecrease1000Button = { 800 - 475, 450, 30, 30 };
 		Rectangle backButton = { 100, 980, basicButtonScaleXY.x, basicButtonScaleXY.y };
 		bool betIncreaseButtonPressed = CheckCollisionPointRec(mousePosition, scale_transform_rect(betIncreaseButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
 		bool betIncrease10ButtonPressed = CheckCollisionPointRec(mousePosition, scale_transform_rect(betIncrease10Button)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
@@ -104,8 +104,8 @@ public:
 		DrawText("+ 1000", 1200.0f + ((strlen(to_string(betAmount).c_str()) * 30)), 450, 50, WHITE);
 		DrawText("-", 800 - 25, 450, 50, WHITE);
 		DrawText("- 10", 800 - 125, 450, 50, WHITE);
-		DrawText("- 100", 800 - 225, 450, 50, WHITE);
-		DrawText("- 1000", 800 - 325, 450, 50, WHITE);
+		DrawText("- 100", 800 - 275, 450, 50, WHITE);
+		DrawText("- 1000", 800 - 475, 450, 50, WHITE);
 		DrawTextEx(fontCastellarRegular, "Lock in bet", { 800, 600 }, 30, 2, BLACK);
 		DrawRectangleRec(backButton, BLACK); // draws the button to exit game - Dom
 		DrawTextEx(fontCastellarRegular, "Back", { backButton.x + backButton.width + 25, (backButton.y + (backButton.height / 3)) }, 30, 2, BLACK);
@@ -154,17 +154,29 @@ public:
 		{
 			betAmount--;
 		}
-		if (betDecrease10ButtonPressed && betAmount > 0)
+		if (betDecrease10ButtonPressed && (betAmount-10) >= 0)
 		{
 			betAmount-= 10;
 		}
-		if (betDecrease100ButtonPressed && betAmount > 0)
+		else if (betDecrease10ButtonPressed)
+		{
+			betAmount = 0;
+		}
+		if (betDecrease100ButtonPressed && (betAmount-100) >= 0)
 		{
 			betAmount -= 100;
 		}
-		if (betDecrease1000ButtonPressed && betAmount > 0)
+		else if (betDecrease100ButtonPressed)
+		{
+			betAmount = 0;
+		}
+		if (betDecrease1000ButtonPressed && (betAmount-1000) >= 0)
 		{
 			betAmount -= 1000;
+		}
+		else if (betDecrease1000ButtonPressed)
+		{
+			betAmount = 0;
 		}
 		if (betDecreaseButtonUp)
 		{
@@ -176,11 +188,11 @@ public:
 		}
 		if (betDecrease100ButtonUp)
 		{
-			DrawText("- 100", 800 - 225, 450, 50, DARKGRAY);
+			DrawText("- 100", 800 - 275, 450, 50, DARKGRAY);
 		}
 		if (betDecrease1000ButtonUp)
 		{
-			DrawText("- 1000", 800 - 325, 450, 50, DARKGRAY);
+			DrawText("- 1000", 800 - 475, 450, 50, DARKGRAY);
 		}
 		if (backButtonDown)
 		{
