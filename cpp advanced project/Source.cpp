@@ -268,7 +268,7 @@ public:
 				evaluateHand(currentHandValue, currentDealerHandValue, bet, true/*bool for if standing*/);
 				break;
 			case 3: //double down
-				if (doubleDownLock == false)
+				if (doubleDownLock == false && ((bet*2)<=balance))
 				{
 					bet *= 2;
 					cout << "Double down selected. \nBet increased to: " << bet;
@@ -285,6 +285,8 @@ public:
 				else
 				{
 					cout << "Invalid action. Try again.\n";
+					cin.clear();
+					cin.ignore(INT_MAX, '\n');
 				}
 				break;
 			case 4: //forfeit
@@ -296,6 +298,8 @@ public:
 
 			default: // Added default didn't know if this was necessary but I added it just in case -Zane
 				cout << "Invalid action. Try again.\n";
+				cin.clear();
+				cin.ignore(INT_MAX, '\n');
 				break;
 			}
 		}
@@ -1019,6 +1023,8 @@ int main()
 		else
 		{
 			cout << "\nInvalid choice. Please enter login, sign, or exit." << endl;
+			cin.clear();
+			cin.ignore(INT_MAX, '\n');
 		}
 	}
 
