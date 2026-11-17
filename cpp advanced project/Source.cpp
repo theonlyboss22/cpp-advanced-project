@@ -92,7 +92,7 @@ public:
 		bool betDecrease10ButtonUp = CheckCollisionPointRec(mousePosition, scale_transform_rect(betDecrease10Button)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT);
 		bool betDecrease100ButtonUp = CheckCollisionPointRec(mousePosition, scale_transform_rect(betDecrease100Button)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT);
 		bool betDecrease1000ButtonUp = CheckCollisionPointRec(mousePosition, scale_transform_rect(betDecrease1000Button)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT);
-		bool backButtonDown = CheckCollisionPointRec(mousePosition, scale_transform_rect(backButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+		bool backButtonPressed = CheckCollisionPointRec(mousePosition, scale_transform_rect(backButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
 		bool backButtonUp = CheckCollisionPointRec(mousePosition, scale_transform_rect(backButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT);
 
 		DrawTextEx(fontCastellarRegular, ("Balance: $" + to_string(balance)).c_str(), { 800, 200 }, 30, 2, BLACK);
@@ -194,7 +194,7 @@ public:
 		{
 			DrawText("- 1000", 800 - 475, 450, 50, DARKGRAY);
 		}
-		if (backButtonDown)
+		if (backButtonPressed)
 		{
 			returnToMenu = true;
 			DrawTexture(background, 0, 0, WHITE);
@@ -252,69 +252,86 @@ private:
 	int currentDealerHandValue = 0;
 	bool playing = false;
 	bool doubleDownLock = false;
+	bool standing = false;
 	default_random_engine generator{ random_device{}() };
 	card cards[13] = { {"2", 2, 4}, {"3", 3, 4}, {"4", 4, 4}, {"5", 5, 4}, {"6", 6, 4}, {"7", 7, 4}, {"8", 8, 4}, {"9", 9, 4}, {"10", 10, 4}, {"Jack", 10, 4}, {"Queen", 10, 4}, {"King", 10, 4}, {"Ace", 11, 4} };
-	uniform_int_distribution<int> distribution{ 0, static_cast<int>(sizeof(cards) / sizeof(cards[0])) - 1 }; // changed index so it works
-	int randomNumber = distribution(generator);
 
 	Vector2 lastDisplayedCardPosition = { 400, 300 }; // Starting position for the first card
 
-	// Passes gen by ref using 'auto&' or 'default_random_engine&'
-	void drawCard(int hand[], int& count, card cards[], default_random_engine& generator, uniform_int_distribution<int>& distribution, bool notDealer)
+	bool pickCard(int hand[], int& count)
 	{
-		int drawnIndex;
-
-		if (firstPass == true && notDealer)
+		if (count >= 11)
 		{
-			do // keep generating rand num until card is available
-			{
-				drawnIndex = distribution(generator);
-			} while (cards[drawnIndex].frequency <= 0);
-
-			hand[count] = drawnIndex; // Adds card to hand if available
-			count++;
-
-			cards[drawnIndex].frequency--; // Removes card from deck
+			return false;
 		}
 
-		do // keep generating rand num until card is available
+		int availableCards[13];
+		int availableCount = 0;
+		for (int i = 0; i < 13; i++)
 		{
-			drawnIndex = distribution(generator);
-		} while (cards[drawnIndex].frequency <= 0);
+			if (cards[i].frequency > 0)
+			{
+				availableCards[availableCount++] = i;
+			}
+		}
+
+		if (availableCount == 0)
+		{
+			return false;
+		}
+
+		uniform_int_distribution<int> availableDistribution(0, availableCount - 1);
+		int drawnIndex = availableCards[availableDistribution(generator)];
 
 		hand[count] = drawnIndex; // Adds card to hand if available
 		count++;
 
 		cards[drawnIndex].frequency--; // Removes card from deck
+		return true;
 	}
 
-	void DisplayDealerHand(const int hand[], int count, card cards[]) // new print function to display dealer hand instead of player (worth noting that its at this point in which a good programmer would refactor all of this dealer vs player stuff into classes using inheritance lmao) - Dom
+	void DisplayDealerHand(const int hand[], int count) // new print function to display dealer hand instead of player (worth noting that its at this point in which a good programmer would refactor all of this dealer vs player stuff into classes using inheritance lmao) - Dom
 	{
-		for (int i = 0; i < count; i++)
+		if (!firstPass && hits>=1)
 		{
-			int cardIndex = hand[i];
-			cards[cardIndex].texture = cardTextures[cards[cardIndex].name];
-			DrawTextEx(fontCastellarRegular, "Dealer's Hand", { 50, 350 }, 30, 2, BLACK);
-			DrawTextEx(fontCastellarRegular, ("Value: " + to_string(calculateHandValue(hand, count, cards))).c_str(), { 50, 400 }, 30, 2, BLACK);
-			DrawTexture(cards[cardIndex].texture, 400 + (i * 200), 300, WHITE);
-			lastDisplayedCardPosition = { 400.0f + (i * 200), 300 }; // Update the last displayed card position
+			for (int i = 0; i < count; i++)
+			{
+				int cardIndex = hand[i];
+				cards[cardIndex].texture = cardTextures[cards[cardIndex].name];
+				DrawTextEx(fontCastellarRegular, "Dealer's Hand", { 50, 350 }, 30, 2, BLACK);
+				DrawTextEx(fontCastellarRegular, ("Value: " + to_string(calculateHandValue(hand, count))).c_str(), { 50, 400 }, 30, 2, BLACK);
+				DrawTexture(cards[cardIndex].texture, 400 + (i * 100), 300, WHITE);
+				lastDisplayedCardPosition = { 400.0f + (i * 100), 300 }; // Update the last displayed card position
+			}
+		}
+		else if (hits<1)
+		{
+			for (int i = 0; i < count; i++)
+			{
+				int cardIndex = hand[i];
+				cards[cardIndex].texture = cardTextures[cards[cardIndex].name];
+				DrawTextEx(fontCastellarRegular, "Dealer's Hand", { 50, 350 }, 30, 2, BLACK);
+				DrawTextEx(fontCastellarRegular, ("Value: " + to_string(calculateHandValue(hand, count))).c_str(), { 50, 400 }, 30, 2, BLACK);
+				DrawTexture(cards[cardIndex].texture, 400 + (i * 100), 300, WHITE);
+				lastDisplayedCardPosition = { 400.0f + (i * 100), 300 }; // Update the last displayed card position
+			}
 		}
 	}
 
-	void DisplayHand(const int hand[], int count, card cards[])
+	void DisplayHand(const int hand[], int count)
 	{
 		for (int i = 0; i < count; i++)
 		{
 			int cardIndex = hand[i];
 			cards[cardIndex].texture = cardTextures[cards[cardIndex].name];
 			DrawTextEx(fontCastellarRegular, "Your Hand", { 50, 650 }, 30, 2, BLACK);
-			DrawTextEx(fontCastellarRegular, ("Value: " + to_string(calculateHandValue(hand, count, cards))).c_str(), { 50, 700 }, 30, 2, BLACK);
-			DrawTexture(cards[cardIndex].texture, 400 + (i * 200), 600, WHITE);
-			lastDisplayedCardPosition = { 400.0f + (i * 200), 600 }; // Update the last displayed card position
+			DrawTextEx(fontCastellarRegular, ("Value: " + to_string(calculateHandValue(hand, count))).c_str(), { 50, 700 }, 30, 2, BLACK);
+			DrawTexture(cards[cardIndex].texture, 400 + (i * 100), 600, WHITE);
+			lastDisplayedCardPosition = { 400.0f + (i * 100), 600 }; // Update the last displayed card position
 		}
 	}
 
-	int calculateHandValue(const int hand[], int count, const card cards[])
+	int calculateHandValue(const int hand[], int count)
 	{
 		int total = 0;
 		int aceCount = 0;
@@ -341,7 +358,7 @@ private:
 	}
 
 	// Win/Lose logic
-	bool evaluateHand(int currentHandValue, int currentDealerHandValue, int currentBet, bool stand)
+	bool evaluateHand(int currentHandValue, int currentDealerHandValue, int currentBet, bool standing)
 	{
 		if (currentHandValue == 21)
 		{
@@ -367,13 +384,13 @@ private:
 			cout << "You win!\nNew Balance: " << balance << "\n";
 			return true; // Round is over
 		}
-		else if (currentHandValue < currentDealerHandValue && currentDealerHandValue >= 17 && stand == true)
+		else if (currentHandValue < currentDealerHandValue && currentDealerHandValue >= 17 && standing == true)
 		{
 			balance -= currentBet;
 			cout << "You lose!\nCurrent Balance: " << balance << "\n";
 			return true; // Round is over
 		}
-		else if (currentHandValue == currentDealerHandValue && currentDealerHandValue >= 17 && stand == true)
+		else if (currentHandValue == currentDealerHandValue && currentDealerHandValue >= 17 && standing == true)
 		{
 			cout << "Push! No one wins.\nCurrent Balance: " << balance << "\n";
 			return true; // Round is over
@@ -389,10 +406,15 @@ public:
 		setName("Blackjack");
 
 		Rectangle forfeitButton = { 100, 980, basicButtonScaleXY.x, basicButtonScaleXY.y };
+		Rectangle hitButton = { 800, 980, basicButtonScaleXY.x, basicButtonScaleXY.y };
+		Rectangle standButton = { 1000, 980, basicButtonScaleXY.x, basicButtonScaleXY.y };
 
-		bool forfeitButtonDown = CheckCollisionPointRec(mousePosition, scale_transform_rect(forfeitButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+		bool forfeitButtonPressed = CheckCollisionPointRec(mousePosition, scale_transform_rect(forfeitButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
 		bool forfeitButtonUp = CheckCollisionPointRec(mousePosition, scale_transform_rect(forfeitButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT);
-
+		bool hitButtonPressed = CheckCollisionPointRec(mousePosition, scale_transform_rect(hitButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+		bool hitButtonUp = CheckCollisionPointRec(mousePosition, scale_transform_rect(hitButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT);
+		bool standButtonPressed = CheckCollisionPointRec(mousePosition, scale_transform_rect(standButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+		bool standButtonUp = CheckCollisionPointRec(mousePosition, scale_transform_rect(standButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT);
 
 		if (!isBetLocked())
 		{
@@ -403,34 +425,42 @@ public:
 			}
 		}
 
-		if (firstPass)
+		DrawTexture(background, 0, 0, WHITE);
+
+		if (standing && currentDealerHandValue <17)
 		{
-			DrawTexture(background, 0, 0, WHITE);
+			pickCard(dealerHand, dealerCount); // picks second and all following dealer cards after player stands ( the second dealer card is no longer drawn at the real life time anymore we just pretend it is :( ) - Dom
+		}
+		if (hits + 2 > count && !standing)
+		{
+			pickCard(hand, count);
 		}
 
-		if ((hits + 2 >= count) || firstPass)
-		{
-			drawCard(hand, count, cards, generator, distribution, true); // changed to drawHand to drawCard so at start 2 cards are drawn. -Zane
-		}
+		DrawTextEx(fontCastellarRegular, getName().c_str(), { 800, 100 }, 50, 2, BLACK);
+		DrawTextEx(fontCastellarRegular, ("Balance: $" + to_string(balance) + " +/- $" + to_string(bet)).c_str(), { 800, 200 }, 30, 2, BLACK);
+
 		if (firstPass)
 		{
-			DrawTextEx(fontCastellarRegular, getName().c_str(), { 800, 100 }, 50, 2, BLACK);
-			DrawTextEx(fontCastellarRegular, ("Balance: $" + to_string(balance) + " +/- $" + to_string(bet)).c_str(), { 800, 200 }, 30, 2, BLACK);
-			drawCard(dealerHand, dealerCount, cards, generator, distribution, false); // draws initial dealer card with new variables to store dealer hand seperatley - Dom
-			DisplayHand(hand, count, cards); // refactored the print hand function to display hand using raylib textures instead of console output. - Dom
-			DisplayDealerHand(dealerHand, dealerCount, cards); // refactored the print dealer hand function to display dealer hand using raylib textures instead of console output. - Dom
+			pickCard(dealerHand, dealerCount); // draws initial dealer card with new variables to store dealer hand seperatley - Dom
+		}
 
-			drawCard(dealerHand, dealerCount, cards, generator, distribution, false); // draws second dealer card after displaying previous cards to simulate it being face down until later in the game - Dom
-			DrawTexture(cardTextures["back"], lastDisplayedCardPosition.x + 200, lastDisplayedCardPosition.y, WHITE); // displays the second dealer card face down - Dom
+		DisplayHand(hand, count); // refactored the print hand function to display hand using raylib textures instead of console output. - Dom
+		DisplayDealerHand(dealerHand, dealerCount); // refactored the print dealer hand function to display dealer hand using raylib textures instead of console output. - Dom
+
+		if (!standing)
+		{
+			DrawTexture(cardTextures["back"], lastDisplayedCardPosition.x + 100, lastDisplayedCardPosition.y, WHITE); // displays the second dealer card face down - Dom
 		}
 
 		DrawRectangleRec(forfeitButton, BLACK); // draws the button to exit game - Dom
 		DrawTextEx(fontCastellarRegular, "Forfeit and give up bet", { forfeitButton.x + forfeitButton.width + 25, (forfeitButton.y + (forfeitButton.height / 3)) }, 30, 2, BLACK);
+		DrawRectangleRec(hitButton, BLACK);
+		DrawTextEx(fontCastellarRegular, "Hit", { hitButton.x + hitButton.width + 25, (hitButton.y + (hitButton.height / 3)) }, 30, 2, BLACK);
+		DrawRectangleRec(standButton, BLACK);
+		DrawTextEx(fontCastellarRegular, "Stand", { standButton.x + standButton.width + 25, (standButton.y + (standButton.height / 3)) }, 30, 2, BLACK);
 
 
-
-
-		if (forfeitButtonDown)
+		if (forfeitButtonPressed)
 		{
 			if (isBetLocked() && bet >= 0)
 			{
@@ -445,8 +475,39 @@ public:
 			DrawRectangleRec(forfeitButton, DARKGRAY);
 		}
 
-		currentDealerHandValue = calculateHandValue(dealerHand, dealerCount, cards);
-		currentHandValue = calculateHandValue(hand, count, cards);
+		if (hitButtonPressed)
+		{
+			if (isBetLocked() && bet >= 0)
+			{
+				bool stand;
+				stand = false;
+				hits++;
+
+			}
+		}
+		if (hitButtonUp)
+		{
+			DrawRectangleRec(hitButton, DARKGRAY);
+		}
+		if (standButtonPressed)
+		{
+			if (isBetLocked() && bet >= 0)
+			{
+				bool stand;
+				stand = true;
+				hits++;
+				standing = true;
+			}
+		}
+		if (standButtonUp)
+		{
+			DrawRectangleRec(standButton, DARKGRAY);
+		}
+
+		currentDealerHandValue = calculateHandValue(dealerHand, dealerCount);
+		currentHandValue = calculateHandValue(hand, count);
+
+		//evaluateHand(currentHandValue, currentDealerHandValue, bet, standing);
 
 		firstPass = false;
 
@@ -477,17 +538,7 @@ public:
 			switch (selectedAction)
 			{
 			case 1: //hit
-				bool stand;
-				stand = false;
-				drawCard(hand, count, cards, generator, distribution);
-				printHand(hand, count, cards);
-				currentHandValue = calculateHandValue(hand, count, cards); // changed from += to = so that currentHandValue is recalc instead of added to. -Zane
-				cout << "Current Hand Value: " << currentHandValue << endl;
 
-				if (evaluateHand(currentHandValue, bet))
-				{
-					playerTurn = false;
-				}
 				break;
 			case 2: //stand
 				cout << "You stood with a hand value of " << currentHandValue << ".\n";
@@ -1246,15 +1297,15 @@ int main()
 	balance = accounts[currentAccount].balance;
 
 
-	bool bjButtonDown = false;
+	bool bjButtonPressed = false;
 	bool bjButtonUp = false;
-	bool slotsButtonDown = false;
+	bool slotsButtonPressed = false;
 	bool slotsButtonUp = false;
-	bool rouletteButtonDown = false;
+	bool rouletteButtonPressed = false;
 	bool rouletteButtonUp = false;
-	bool horseRaceButtonDown = false;
+	bool horseRaceButtonPressed = false;
 	bool horseRaceButtonUp = false;
-	bool exitButtonDown = false;
+	bool exitButtonPressed = false;
 	bool exitButtonUp = false;
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE); // allows window to be resized - Dom
 	InitWindow(BASE_WIDTH, BASE_HEIGHT, "CasinoGame"); // initializes window with base width and height resolution - Dom
@@ -1303,7 +1354,7 @@ int main()
 			DrawRectangleRec(exitButton, BLACK); // draws the button to exit game - Dom
 			DrawTextEx(fontCastellarRegular, "Exit", { exitButton.x + exitButton.width + 25, (exitButton.y + (exitButton.height / 3)) }, 30, 2, BLACK);
 
-			if (bjButtonDown)
+			if (bjButtonPressed)
 			{
 				game = new Blackjack();
 			}
@@ -1311,7 +1362,7 @@ int main()
 			{
 				DrawRectangleRec(blackjackButton, DARKGRAY);
 			}
-			if (slotsButtonDown)
+			if (slotsButtonPressed)
 			{
 				game = new Slots();
 			}
@@ -1319,7 +1370,7 @@ int main()
 			{
 				DrawRectangleRec(slotsButton, DARKGRAY);
 			}
-			if (rouletteButtonDown)
+			if (rouletteButtonPressed)
 			{
 				game = new Roulette();
 			}
@@ -1327,7 +1378,7 @@ int main()
 			{
 				DrawRectangleRec(rouletteButton, DARKGRAY);
 			}
-			if (horseRaceButtonDown)
+			if (horseRaceButtonPressed)
 			{
 				game = new HorseRace();
 			}
@@ -1335,7 +1386,7 @@ int main()
 			{
 				DrawRectangleRec(horseRaceButton, DARKGRAY);
 			}
-			if (exitButtonDown)
+			if (exitButtonPressed)
 			{
 				cout << "Exit button triggered" << endl;
 				break;
@@ -1370,15 +1421,15 @@ int main()
 		Rectangle destRec = { offsetX, offsetY, BASE_WIDTH * scale, BASE_HEIGHT * scale }; // destination rectangle for render texture - Dom
 
 		//all of these are getting the mouse position and checking if the mouse is over the button and if the mouse button is down or up - Dom
-		bjButtonDown = (CheckCollisionPointRec(mousePosition, scale_transform_rect(blackjackButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT));
+		bjButtonPressed = (CheckCollisionPointRec(mousePosition, scale_transform_rect(blackjackButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT));
 		bjButtonUp = (CheckCollisionPointRec(mousePosition, scale_transform_rect(blackjackButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT));
-		slotsButtonDown = (CheckCollisionPointRec(mousePosition, scale_transform_rect(slotsButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT));
+		slotsButtonPressed = (CheckCollisionPointRec(mousePosition, scale_transform_rect(slotsButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT));
 		slotsButtonUp = (CheckCollisionPointRec(mousePosition, scale_transform_rect(slotsButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT));
-		rouletteButtonDown = (CheckCollisionPointRec(mousePosition, scale_transform_rect(rouletteButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT));
+		rouletteButtonPressed = (CheckCollisionPointRec(mousePosition, scale_transform_rect(rouletteButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT));
 		rouletteButtonUp = (CheckCollisionPointRec(mousePosition, scale_transform_rect(rouletteButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT));
-		horseRaceButtonDown = (CheckCollisionPointRec(mousePosition, scale_transform_rect(horseRaceButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT));
+		horseRaceButtonPressed = (CheckCollisionPointRec(mousePosition, scale_transform_rect(horseRaceButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT));
 		horseRaceButtonUp = (CheckCollisionPointRec(mousePosition, scale_transform_rect(horseRaceButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT));
-		exitButtonDown = (!returnedToMenuThisFrame && CheckCollisionPointRec(mousePosition, scale_transform_rect(exitButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT));
+		exitButtonPressed = (!returnedToMenuThisFrame && CheckCollisionPointRec(mousePosition, scale_transform_rect(exitButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT));
 		exitButtonUp = (CheckCollisionPointRec(mousePosition, scale_transform_rect(exitButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT));
 
 
