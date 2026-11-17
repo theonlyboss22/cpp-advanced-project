@@ -305,14 +305,94 @@ public:
 		}
 	}
 };
-
 class Slots : public Game
 {
+private:
+	void printPaytable()
+	{
+		cout << "\n================ SLOTS PAYTABLE ================\n";
+		cout << "  [7] [7] [7]   -> MEGA JACKPOT (15x Bet)\n";
+		cout << "  [9] [9] [9]   -> MINI JACKPOT (8x Bet)\n";
+		cout << "  [0] [0] [0]   -> MINI JACKPOT (8x Bet)\n";
+		cout << "  Any 3 Match   -> Triple Match (4x Bet)\n";
+		cout << "  Straight Run  -> e.g. 1-2-3 or 9-8-7 (3x Bet)\n";
+		cout << "  Any 2 Match   -> Pair Match (1.5x Bet)\n";
+		cout << "  Sum Equals 21 -> Lucky 21 Bonus (+2x Bet)\n";
+		cout << "  Two 7s        -> Free Respin on the 3rd Reel!\n";
+		cout << "================================================\n\n";
+	}
+
+	int evaluateSpin(int r1, int r2, int r3, int currentBet)
+	{
+		int totalWinnings = 0;
+		bool wonMainLine = false;
+
+		// 1.Three-of-a-Kind and Specific Number Tiers
+		if (r1 == r2 && r2 == r3)
+		{
+			wonMainLine = true;
+			if (r1 == 7)
+			{
+				int prize = currentBet * 15;
+				totalWinnings += prize;
+				cout << "!! MEGA JACKPOT !! Three 7s! (+ " << prize << ")\n";
+			}
+			else if (r1 == 9 || r1 == 0)
+			{
+				int prize = currentBet * 8;
+				totalWinnings += prize;
+				cout << "! MINI JACKPOT ! Three " << r1 << "s! (+ " << prize << ")\n";
+			}
+			else
+			{
+				int prize = currentBet * 4;
+				totalWinnings += prize;
+				cout << "Triple Match! Three " << r1 << "s! (+ " << prize << ")\n";
+			}
+		}
+		// 2. Ascending or Descending
+		else if ((r2 == r1 + 1 && r3 == r2 + 1) || (r2 == r1 - 1 && r3 == r2 - 1))
+		{
+			wonMainLine = true;
+			int prize = currentBet * 3;
+			totalWinnings += prize;
+			cout << "Straight Run! (" << r1 << "-" << r2 << "-" << r3 << ") (+ " << prize << ")\n";
+		}
+		// 3.Pairs
+		else if (r1 == r2 || r2 == r3 || r1 == r3)
+		{
+			wonMainLine = true;
+			int prize = static_cast<int>(currentBet * 1.5);
+			totalWinnings += prize;
+			cout << "Pair Match! Two of a kind! (+ " << prize << ")\n";
+		}
+
+		// 4. Check if number adds up to 21
+		if (r1 + r2 + r3 == 21)
+		{
+			wonMainLine = true;
+			int bonus = currentBet * 2;
+			totalWinnings += bonus;
+			cout << "LUCKY 21! Your numbers add up to 21! (+ " << bonus << ")\n";
+		}
+
+		if (!wonMainLine)
+		{
+			cout << "No match. Better luck next spin!\n";
+		}
+
+		return totalWinnings;
+	}
+
 public:
 	void play() override
 	{
+		default_random_engine generator(random_device{}());
+		uniform_int_distribution<int> distribution(0, 9);
 
 		bool keepPlaying = true;
+		cout << "Slots selected.\n";
+
 		while (keepPlaying)
 		{
 			if (balance <= 0)
@@ -321,63 +401,76 @@ public:
 				break;
 			}
 
+			int menuChoice = 0;
+			cout << "\nCurrent Balance: " << balance << "\n";
+			cout << "1. Spin\n2. View Paytable\n3. Exit to Casino Menu\nChoice: ";
+			cin >> menuChoice;
 
-			cout << "Slots selected. \n";
+			if (cin.fail())
+			{
+				cin.clear();
+				cin.ignore(INT_MAX, '\n');
+				cout << "Invalid input. Please enter 1, 2, or 3.\n";
+				continue;
+			}
+
+			if (menuChoice == 2)
+			{
+				printPaytable();
+				continue;
+			}
+			else if (menuChoice == 3)
+			{
+				keepPlaying = false;
+				break;
+			}
+			else if (menuChoice != 1)
+			{
+				cout << "Invalid option. Try again.\n";
+				continue;
+			}
 
 			bet = getBet();
 			balance -= bet;
 
-			// equal chance for numbers to be chosen
-			int symbolPool[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0 };
-			int poolSize = sizeof(symbolPool) / sizeof(symbolPool[0]);
+			// Spin the 3 reels (0 - 9)
+			int reel1 = distribution(generator);
+			int reel2 = distribution(generator);
+			int reel3 = distribution(generator);
 
-			// 3 x 1 reel
-			int reel1 = symbolPool[rand() % poolSize];
-			int reel2 = symbolPool[rand() % poolSize];
-			int reel3 = symbolPool[rand() % poolSize];
-
-			// display
+			// Display initial spin
 			cout << "\n=========================\n";
 			cout << "  [ " << reel1 << " ]  [ " << reel2 << " ]  [ " << reel3 << " ] \n";
 			cout << "=========================\n\n";
 
-			// results
-			if (reel1 == reel2 && reel2 == reel3)
+			// Check for if they have a near miss (two 7s)
+			int sevenCount = (reel1 == 7) + (reel2 == 7) + (reel3 == 7);
+			if (sevenCount == 2)
 			{
-				if (reel1 == 7)
-				{
-					// jackpot
-					int winnings = bet * 10;
-					balance += winnings;
-					cout << "!! JACKPOT !! Three 7s!\n";
-					cout << "You won 10x your bet: +" << winnings << "\n";
-				}
-				else
-				{
-					// others
-					int winnings = bet * 2;
-					balance += winnings;
-					cout << "Match! Three of a kind!\n";
-					cout << "You won 2x your bet: +" << winnings << "\n";
-				}
-			}
-			else
-			{
-				cout << "No match. Better luck next spin!\n";
-			}
-			cout << "Current Balance: " << balance << "\n\n";
+				cout << "SO CLOSE! Two 7s landed! Triggering a FREE RESPIN on the last reel...\n";
+				if (reel1 != 7) reel1 = distribution(generator);
+				else if (reel2 != 7) reel2 = distribution(generator);
+				else if (reel3 != 7) reel3 = distribution(generator);
 
-			int gameChoice = 0;
-			cout << "Choose an option:\n1. Play Again\n2. Exit to Casino Menu\nChoice: ";
-			cin >> gameChoice;
-
-			if (gameChoice == 2)
-			{
-				keepPlaying = false;
+				cout << "\n====== RESPIN RESULT ======\n";
+				cout << "  [ " << reel1 << " ]  [ " << reel2 << " ]  [ " << reel3 << " ] \n";
+				cout << "===========================\n\n";
 			}
+
+			// Evaluate all win conditions and update balance
+			int winnings = evaluateSpin(reel1, reel2, reel3, bet);
+			if (winnings > 0)
+			{
+				balance += winnings;
+				cout << "Total Spin Payout: +" << winnings << "\n";
+			}
+
+			cout << "Updated Balance: " << balance << "\n";
 		}
 	}
 };
+
+
 
 class Roulette : public Game // Recycled code from previous project of mine, and from Slots + Blackjack. -Zane
 {
