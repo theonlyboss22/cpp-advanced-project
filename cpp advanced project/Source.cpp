@@ -45,6 +45,7 @@ struct Account // Account Information
 
 int balance = 0;
 bool playing = true;
+bool returnToMenu = false;
 
 void addBalance(int newBalance)
 {
@@ -57,7 +58,6 @@ private:
 	string name;
 	int betAmount = 0;
 	bool betLocked = false;
-	bool returnToMenu = false;
 public:
 	int bet = 0;
 	virtual void play() = 0;
@@ -225,10 +225,6 @@ public:
 	{
 		return betLocked;
 	}
-	bool wantsReturnToMenu() const
-	{
-		return returnToMenu;
-	}
 };
 
 class Blackjack : public Game
@@ -242,6 +238,7 @@ private:
 		Texture2D texture;
 	};
 
+	int previousBalance = balance;
 	bool firstPass = true;
 	int dealerHand[11];
 	int dealerCount = 0;
@@ -358,45 +355,59 @@ private:
 	}
 
 	// Win/Lose logic
-	bool evaluateHand(int currentHandValue, int currentDealerHandValue, int currentBet, bool standing)
+	auto evaluateHand(int currentHandValue, int currentDealerHandValue, int currentBet, bool standing)
 	{
+		struct output { bool gameIsOver; string output; };
 		if (currentHandValue == 21)
 		{
-			balance += currentBet;
-			cout << "Blackjack! You win!\nNew Balance: " << balance << "\n";
-			return true; // Round is over
+			balance = previousBalance + currentBet;
+			return output{true, "Blackjack! You win!"}; // Round is over
 		}
 		else if (currentHandValue > 21)
 		{
-			balance -= currentBet;
-			cout << "You Busted!\nCurrent Balance: " << balance << "\n";
-			return true; // Round is over
+			balance = previousBalance - currentBet;
+			return output{true, "You Busted!"}; // Round is over
 		}
 		else if (currentDealerHandValue > 21)
 		{
-			balance += currentBet;
-			cout << "Dealer Busted! You win!\nNew Balance: " << balance << "\n";
-			return true; // Round is over
+			balance = previousBalance + currentBet;
+			return output{true, "Dealer Busted! You win!"}; // Round is over
 		}
 		else if (currentHandValue > currentDealerHandValue && currentDealerHandValue >= 17)
 		{
-			balance += currentBet;
-			cout << "You win!\nNew Balance: " << balance << "\n";
-			return true; // Round is over
+			balance = previousBalance + currentBet;
+			return output{true, "You win!"}; // Round is over
 		}
 		else if (currentHandValue < currentDealerHandValue && currentDealerHandValue >= 17 && standing == true)
 		{
-			balance -= currentBet;
-			cout << "You lose!\nCurrent Balance: " << balance << "\n";
-			return true; // Round is over
+			balance = previousBalance - currentBet;
+			return output{true, "You lose!"}; // Round is over
 		}
 		else if (currentHandValue == currentDealerHandValue && currentDealerHandValue >= 17 && standing == true)
 		{
-			cout << "Push! No one wins.\nCurrent Balance: " << balance << "\n";
-			return true; // Round is over
+			return output{true, "Push! No one wins."}; // Round is over
 		}
 		else
-			return false; // Game continues
+			return output{false, ""}; // Game continues
+	}
+	void DisplayEndGameScreen(bool gameIsOver, string gameOverText, Rectangle backButton)
+	{
+		bool backButtonPressed = CheckCollisionPointRec(mousePosition, scale_transform_rect(backButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+		bool backButtonUp = CheckCollisionPointRec(mousePosition, scale_transform_rect(backButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT);
+		DrawTextEx(fontCastellarRegular, gameOverText.c_str(), {800, 520}, 50, 2, BLACK);
+		DrawRectangleRec(backButton, BLACK); // draws the button to exit game - Dom
+		DrawTextEx(fontCastellarRegular, "End Round", { backButton.x + backButton.width + 25, (backButton.y + (backButton.height / 3)) }, 30, 2, BLACK);
+
+		if (backButtonPressed)
+		{
+			returnToMenu = true;
+			DrawTexture(background, 0, 0, WHITE);
+			return;
+		}
+		if (backButtonUp)
+		{
+			DrawRectangleRec(backButton, DARKGRAY);
+		}
 	}
 
 
@@ -408,6 +419,7 @@ public:
 		Rectangle forfeitButton = { 100, 980, basicButtonScaleXY.x, basicButtonScaleXY.y };
 		Rectangle hitButton = { 800, 980, basicButtonScaleXY.x, basicButtonScaleXY.y };
 		Rectangle standButton = { 1000, 980, basicButtonScaleXY.x, basicButtonScaleXY.y };
+		Rectangle backFromEndButton = { 100, 980, basicButtonScaleXY.x, basicButtonScaleXY.y };
 
 		bool forfeitButtonPressed = CheckCollisionPointRec(mousePosition, scale_transform_rect(forfeitButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
 		bool forfeitButtonUp = CheckCollisionPointRec(mousePosition, scale_transform_rect(forfeitButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT);
@@ -426,88 +438,93 @@ public:
 		}
 
 		DrawTexture(background, 0, 0, WHITE);
-
-		if (standing && currentDealerHandValue <17)
+		if (!evaluateHand(currentHandValue, currentDealerHandValue, bet, standing).gameIsOver)
 		{
-			pickCard(dealerHand, dealerCount); // picks second and all following dealer cards after player stands ( the second dealer card is no longer drawn at the real life time anymore we just pretend it is :( ) - Dom
-		}
-		if (hits + 2 > count && !standing)
-		{
-			pickCard(hand, count);
+			if (standing && currentDealerHandValue <17)
+			{
+				pickCard(dealerHand, dealerCount); // picks second and all following dealer cards after player stands ( the second dealer card is no longer drawn at the real life time anymore we just pretend it is :( ) - Dom
+			}
+			if (hits + 2 > count && !standing && currentHandValue <=32)
+			{
+				pickCard(hand, count);
+			}
 		}
 
 		DrawTextEx(fontCastellarRegular, getName().c_str(), { 800, 100 }, 50, 2, BLACK);
-		DrawTextEx(fontCastellarRegular, ("Balance: $" + to_string(balance) + " +/- $" + to_string(bet)).c_str(), { 800, 200 }, 30, 2, BLACK);
-
-		if (firstPass)
-		{
-			pickCard(dealerHand, dealerCount); // draws initial dealer card with new variables to store dealer hand seperatley - Dom
-		}
-
 		DisplayHand(hand, count); // refactored the print hand function to display hand using raylib textures instead of console output. - Dom
 		DisplayDealerHand(dealerHand, dealerCount); // refactored the print dealer hand function to display dealer hand using raylib textures instead of console output. - Dom
-
-		if (!standing)
+		if (!evaluateHand(currentHandValue, currentDealerHandValue, bet, standing).gameIsOver)
 		{
-			DrawTexture(cardTextures["back"], lastDisplayedCardPosition.x + 100, lastDisplayedCardPosition.y, WHITE); // displays the second dealer card face down - Dom
-		}
+			DrawTextEx(fontCastellarRegular, ("Balance: $" + to_string(balance) + " +/- $" + to_string(bet)).c_str(), { 800, 200 }, 30, 2, BLACK);
 
-		DrawRectangleRec(forfeitButton, BLACK); // draws the button to exit game - Dom
-		DrawTextEx(fontCastellarRegular, "Forfeit and give up bet", { forfeitButton.x + forfeitButton.width + 25, (forfeitButton.y + (forfeitButton.height / 3)) }, 30, 2, BLACK);
-		DrawRectangleRec(hitButton, BLACK);
-		DrawTextEx(fontCastellarRegular, "Hit", { hitButton.x + hitButton.width + 25, (hitButton.y + (hitButton.height / 3)) }, 30, 2, BLACK);
-		DrawRectangleRec(standButton, BLACK);
-		DrawTextEx(fontCastellarRegular, "Stand", { standButton.x + standButton.width + 25, (standButton.y + (standButton.height / 3)) }, 30, 2, BLACK);
-
-
-		if (forfeitButtonPressed)
-		{
-			if (isBetLocked() && bet >= 0)
+			if (firstPass)
 			{
-				balance -= bet;
-				playing = false;
+				pickCard(dealerHand, dealerCount); // draws initial dealer card with new variables to store dealer hand seperatley - Dom
 			}
-			setReturnToMenu(true);
-			return;
-		}
-		if (forfeitButtonUp)
-		{
-			DrawRectangleRec(forfeitButton, DARKGRAY);
-		}
 
-		if (hitButtonPressed)
-		{
-			if (isBetLocked() && bet >= 0)
-			{
-				bool stand;
-				stand = false;
-				hits++;
 
-			}
-		}
-		if (hitButtonUp)
-		{
-			DrawRectangleRec(hitButton, DARKGRAY);
-		}
-		if (standButtonPressed)
-		{
-			if (isBetLocked() && bet >= 0)
+			if (!standing)
 			{
-				bool stand;
-				stand = true;
-				hits++;
-				standing = true;
+				DrawTexture(cardTextures["back"], lastDisplayedCardPosition.x + 100, lastDisplayedCardPosition.y, WHITE); // displays the second dealer card face down - Dom
 			}
-		}
-		if (standButtonUp)
-		{
-			DrawRectangleRec(standButton, DARKGRAY);
+
+			DrawRectangleRec(forfeitButton, BLACK); // draws the button to exit game - Dom
+			DrawTextEx(fontCastellarRegular, "Forfeit and give up bet", { forfeitButton.x + forfeitButton.width + 25, (forfeitButton.y + (forfeitButton.height / 3)) }, 30, 2, BLACK);
+			DrawRectangleRec(hitButton, BLACK);
+			DrawTextEx(fontCastellarRegular, "Hit", { hitButton.x + hitButton.width + 25, (hitButton.y + (hitButton.height / 3)) }, 30, 2, BLACK);
+			DrawRectangleRec(standButton, BLACK);
+			DrawTextEx(fontCastellarRegular, "Stand", { standButton.x + standButton.width + 25, (standButton.y + (standButton.height / 3)) }, 30, 2, BLACK);
+
+
+			if (forfeitButtonPressed)
+			{
+				if (isBetLocked() && bet >= 0)
+				{
+					balance -= bet;
+					playing = false;
+				}
+				setReturnToMenu(true);
+				return;
+			}
+			if (forfeitButtonUp)
+			{
+				DrawRectangleRec(forfeitButton, DARKGRAY);
+			}
+
+			if (hitButtonPressed)
+			{
+				if (isBetLocked() && bet >= 0)
+				{
+					bool stand;
+					stand = false;
+					hits++;
+
+				}
+			}
+			if (hitButtonUp)
+			{
+				DrawRectangleRec(hitButton, DARKGRAY);
+			}
+			if (standButtonPressed)
+			{
+				if (isBetLocked() && bet >= 0)
+				{
+					bool stand;
+					stand = true;
+					hits++;
+					standing = true;
+				}
+			}
+			if (standButtonUp)
+			{
+				DrawRectangleRec(standButton, DARKGRAY);
+			}
 		}
 
 		currentDealerHandValue = calculateHandValue(dealerHand, dealerCount);
 		currentHandValue = calculateHandValue(hand, count);
 
-		//evaluateHand(currentHandValue, currentDealerHandValue, bet, standing);
+		DisplayEndGameScreen(evaluateHand(currentHandValue, currentDealerHandValue, bet, standing).gameIsOver, evaluateHand(currentHandValue, currentDealerHandValue, bet, standing).output, backFromEndButton);
 
 		firstPass = false;
 
@@ -1400,11 +1417,12 @@ int main()
 		if (game != nullptr)
 		{
 			game->play();
-			if (game->wantsReturnToMenu())
+			if (returnToMenu)
 			{
 				delete game;
 				game = nullptr;
 				returnedToMenuThisFrame = true;
+				returnToMenu = false;
 			}
 		}
 		if (balance <= 0 && game != nullptr)
