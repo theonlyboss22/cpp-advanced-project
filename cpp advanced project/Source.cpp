@@ -392,21 +392,24 @@ private:
 	}
 	void DisplayEndGameScreen(bool gameIsOver, string gameOverText, Rectangle backButton)
 	{
-		bool backButtonPressed = CheckCollisionPointRec(mousePosition, scale_transform_rect(backButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
-		bool backButtonUp = CheckCollisionPointRec(mousePosition, scale_transform_rect(backButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT);
-		DrawTextEx(fontCastellarRegular, gameOverText.c_str(), {800, 520}, 50, 2, BLACK);
-		DrawRectangleRec(backButton, BLACK); // draws the button to exit game - Dom
-		DrawTextEx(fontCastellarRegular, "End Round", { backButton.x + backButton.width + 25, (backButton.y + (backButton.height / 3)) }, 30, 2, BLACK);
+		if (gameIsOver)
+		{
+			bool backButtonPressed = CheckCollisionPointRec(mousePosition, scale_transform_rect(backButton)) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+			bool backButtonUp = CheckCollisionPointRec(mousePosition, scale_transform_rect(backButton)) && IsMouseButtonUp(MOUSE_BUTTON_LEFT);
+			DrawTextEx(fontCastellarRegular, gameOverText.c_str(), {800, 520}, 50, 2, BLACK);
+			DrawRectangleRec(backButton, BLACK); // draws the button to exit game - Dom
+			DrawTextEx(fontCastellarRegular, "End Round", { backButton.x + backButton.width + 25, (backButton.y + (backButton.height / 3)) }, 30, 2, BLACK);
 
-		if (backButtonPressed)
-		{
-			returnToMenu = true;
-			DrawTexture(background, 0, 0, WHITE);
-			return;
-		}
-		if (backButtonUp)
-		{
-			DrawRectangleRec(backButton, DARKGRAY);
+			if (backButtonPressed)
+			{
+				returnToMenu = true;
+				DrawTexture(background, 0, 0, WHITE);
+				return;
+			}
+			if (backButtonUp)
+			{
+				DrawRectangleRec(backButton, DARKGRAY);
+			}
 		}
 	}
 
